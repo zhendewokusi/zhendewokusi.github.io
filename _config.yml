@@ -4,13 +4,13 @@
 
 # Site
 title: 元芳你怎么看
-subtitle: '你猜猜我怎么看'
-description: '我怎么知道你怎么看'
+subtitle: '匀速乃急速,诸位加油'
+description: '大二理工男，希望变强awa'
 keywords: c++,c,linux
 author: zhendewokusi
 language: zh-CN  # 指定语言，会影响主题显示的语言，按需修改
 
-timezone: 'UTC'
+timezone: 'Asia/Shanghai'
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
@@ -109,3 +109,28 @@ deploy:
   repository: https://github.com/zhendewokusi/zhendewokusi.github.io
   branch: master
   plugins: -hexo-generator-feed
+
+
+# 侧边栏设置
+sidebar:
+  display: always
+
+# 增加侧边栏阅读进度及回顶端
+back2top:
+  enable: true
+  sidebar: true
+  scrollpercent: true
+
+# 增加右上角GitHub入口
+github_banner:
+  enable: true
+  permalink: https://github.com/your_github_name
+
+# 隐藏powered By Hexo
+powered: false
+
+# 添加文章版权声明
+creative_commons:
+  post: true
+
+
