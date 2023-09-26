@@ -8,7 +8,8 @@ subtitle: '你猜猜我怎么看'
 description: '我怎么知道你怎么看'
 keywords: c++,c,linux
 author: zhendewokusi
-language: ch
+language: zh-CN  # 指定语言，会影响主题显示的语言，按需修改
+
 timezone: 'UTC'
 
 # URL
@@ -98,8 +99,8 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: landscape
-# theme: next
+# theme: landscape
+theme: next
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
