@@ -111,26 +111,4 @@ deploy:
   plugins: -hexo-generator-feed
 
 
-# 侧边栏设置
-sidebar:
-  display: always
-
-# 增加侧边栏阅读进度及回顶端
-back2top:
-  enable: true
-  sidebar: true
-  scrollpercent: true
-
-# 增加右上角GitHub入口
-github_banner:
-  enable: true
-  permalink: https://github.com/your_github_name
-
-# 隐藏powered By Hexo
-powered: false
-
-# 添加文章版权声明
-creative_commons:
-  post: true
-
 
