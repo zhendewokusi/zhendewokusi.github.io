@@ -1,4 +1,4 @@
 ---
-title: 标签 #页面的头部显示
-type: tags
+title: 分类 #页面的头部显示
+type: categories
 ---
