@@ -29,7 +29,7 @@ custom_file_path:
   #postBodyEnd: source/_data/post-body-end.swig
   #footer: source/_data/footer.swig
   #bodyEnd: source/_data/body-end.swig
-  #variable: source/_data/variables.styl
+  variable: source/_data/variables.styl
   #mixin: source/_data/mixins.styl
   style: source/_data/styles.styl
 
@@ -98,9 +98,9 @@ creative_commons:
 
 # Schemes
 # scheme: Muse
-#scheme: Mist
-scheme: Pisces
-# scheme: Gemini
+# scheme: Mist
+# scheme: Pisces
+scheme: Gemini
 
 # Dark Mode
 darkmode: false
@@ -139,7 +139,7 @@ menu_settings:
 sidebar:
   # Sidebar Position.
   position: left
-  #position: right
+  # position: right
 
   # Manual define the sidebar width. If commented, will be default for:
   # Muse | Mist: 320
@@ -151,23 +151,23 @@ sidebar:
   #  - always  expand for all pages automatically.
   #  - hide    expand only when click on the sidebar toggle icon.
   #  - remove  totally remove sidebar including sidebar toggle.
-  display: post
+  display: always
 
   # Sidebar padding in pixels.
-  padding: 18
+  padding: 20
   # Sidebar offset from top menubar in pixels (only for Pisces | Gemini).
-  offset: 12
+  offset: 20
   # Enable sidebar on narrow view (only for Muse | Mist).
   onmobile: false
 
 # Sidebar Avatar
 avatar:
   # Replace the default image and set the url here.
-  url: #/images/avatar.gif
+  url: /images/avatar.gif
   # If true, the avatar will be dispalyed in circle.
-  rounded: false
+  rounded: true
   # If true, the avatar will be rotated with the cursor.
-  rotated: false
+  rotated: true
 
 # Posts / Categories / Tags in sidebar.
 site_state: true
@@ -177,8 +177,8 @@ site_state: true
 # Key is the link label showing to end users.
 # Value before `||` delimiter is the target permalink, value after `||` delimiter is the name of Font Awesome icon.
 social:
-  #GitHub: https://github.com/yourname || fab fa-github
-  #E-Mail: mailto:yourname@gmail.com || fa fa-envelope
+  # GitHub: https://github.com/zhendewokusi || fab fa-github
+  # E-Mail: mailto:yourname@gmail.com || fa fa-envelope
   #Weibo: https://weibo.com/yourname || fab fa-weibo
   #Google: https://plus.google.com/yourname || fab fa-google
   #Twitter: https://twitter.com/yourname || fab fa-twitter
@@ -820,25 +820,25 @@ mermaid:
 # Animation Settings
 # ---------------------------------------------------------------
 
+# Use Animate.css to animate everything.
 # Use velocity to animate everything.
-# For more information: http://velocityjs.org
 motion:
   enable: true
   async: false
   transition:
     # Transition variants:
-    # fadeIn | flipXIn | flipYIn | flipBounceXIn | flipBounceYIn
-    # swoopIn | whirlIn | shrinkIn | expandIn
-    # bounceIn | bounceUpIn | bounceDownIn | bounceLeftIn | bounceRightIn
-    # slideUpIn | slideDownIn | slideLeftIn | slideRightIn
-    # slideUpBigIn | slideDownBigIn | slideLeftBigIn | slideRightBigIn
-    # perspectiveUpIn | perspectiveDownIn | perspectiveLeftIn | perspectiveRightIn
+    # fadeIn | fadeOut | flipXIn | flipXOut | flipYIn | flipYOut | flipBounceXIn | flipBounceXOut | flipBounceYIn | flipBounceYOut
+    # swoopIn | swoopOut | whirlIn | whirlOut | shrinkIn | shrinkOut | expandIn | expandOut
+    # bounceIn | bounceOut | bounceUpIn | bounceUpOut | bounceDownIn | bounceDownOut | bounceLeftIn | bounceLeftOut | bounceRightIn | bounceRightOut
+    # slideUpIn | slideUpOut | slideDownIn | slideDownOut | slideLeftIn | slideLeftOut | slideRightIn | slideRightOut
+    # slideUpBigIn | slideUpBigOut | slideDownBigIn | slideDownBigOut | slideLeftBigIn | slideLeftBigOut | slideRightBigIn | slideRightBigOut
+    # perspectiveUpIn | perspectiveUpOut | perspectiveDownIn | perspectiveDownOut | perspectiveLeftIn | perspectiveLeftOut | perspectiveRightIn | perspectiveRightOut
     post_block: fadeIn
     post_header: slideDownIn
     post_body: slideDownIn
     coll_header: slideLeftIn
     # Only for Pisces | Gemini.
-    sidebar: slideUpIn
+    sidebar: slideDownBigOut
 
 # Progress bar in the top during page loading.
 # Dependencies: https://github.com/theme-next/theme-next-pace
