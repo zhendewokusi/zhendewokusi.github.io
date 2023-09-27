@@ -69,8 +69,8 @@ index_generator:
 # Category & Tag
 default_category: uncategorized
 category_map:
-  "C++": c-plus-plus
 tag_map:
+  "C++": c-plus-plus
 
 # Metadata elements
 ## https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
