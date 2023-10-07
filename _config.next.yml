@@ -156,7 +156,7 @@ sidebar:
   # Sidebar padding in pixels.
   padding: 20
   # Sidebar offset from top menubar in pixels (only for Pisces | Gemini).
-  offset: 20
+  offset: 40
   # Enable sidebar on narrow view (only for Muse | Mist).
   onmobile: false
 
@@ -823,7 +823,7 @@ mermaid:
 # Use Animate.css to animate everything.
 # Use velocity to animate everything.
 motion:
-  enable: true
+  enable: false
   async: false
   transition:
     # Transition variants:
@@ -833,12 +833,10 @@ motion:
     # slideUpIn | slideUpOut | slideDownIn | slideDownOut | slideLeftIn | slideLeftOut | slideRightIn | slideRightOut
     # slideUpBigIn | slideUpBigOut | slideDownBigIn | slideDownBigOut | slideLeftBigIn | slideLeftBigOut | slideRightBigIn | slideRightBigOut
     # perspectiveUpIn | perspectiveUpOut | perspectiveDownIn | perspectiveDownOut | perspectiveLeftIn | perspectiveLeftOut | perspectiveRightIn | perspectiveRightOut
-    post_block: fadeIn
-    post_header: slideDownIn
-    post_body: slideDownIn
-    coll_header: slideLeftIn
+
     # Only for Pisces | Gemini.
-    sidebar: slideDownBigOut
+    sidebar: slideUpIn
+    display: always
 
 # Progress bar in the top during page loading.
 # Dependencies: https://github.com/theme-next/theme-next-pace
