@@ -151,7 +151,7 @@ sidebar:
   #  - always  expand for all pages automatically.
   #  - hide    expand only when click on the sidebar toggle icon.
   #  - remove  totally remove sidebar including sidebar toggle.
-  display: always
+  display: post
 
   # Sidebar padding in pixels.
   padding: 20
@@ -170,15 +170,15 @@ avatar:
   rotated: true
 
 # Posts / Categories / Tags in sidebar.
-site_state: true
+site_state: false
 
 # Social Links
 # Usage: `Key: permalink || icon`
 # Key is the link label showing to end users.
 # Value before `||` delimiter is the target permalink, value after `||` delimiter is the name of Font Awesome icon.
 social:
-  # GitHub: https://github.com/zhendewokusi || fab fa-github
-  # E-Mail: mailto:yourname@gmail.com || fa fa-envelope
+  GitHub: https://github.com/zhendewokusi || fab fa-github
+  E-Mail: mailto:768672249@qq.com || fa fa-envelope
   #Weibo: https://weibo.com/yourname || fab fa-weibo
   #Google: https://plus.google.com/yourname || fab fa-google
   #Twitter: https://twitter.com/yourname || fab fa-twitter
@@ -823,7 +823,7 @@ mermaid:
 # Use Animate.css to animate everything.
 # Use velocity to animate everything.
 motion:
-  enable: false
+  enable: true
   async: false
   transition:
     # Transition variants:
@@ -833,7 +833,10 @@ motion:
     # slideUpIn | slideUpOut | slideDownIn | slideDownOut | slideLeftIn | slideLeftOut | slideRightIn | slideRightOut
     # slideUpBigIn | slideUpBigOut | slideDownBigIn | slideDownBigOut | slideLeftBigIn | slideLeftBigOut | slideRightBigIn | slideRightBigOut
     # perspectiveUpIn | perspectiveUpOut | perspectiveDownIn | perspectiveDownOut | perspectiveLeftIn | perspectiveLeftOut | perspectiveRightIn | perspectiveRightOut
-
+    post_block: fadeIn
+    post_header: slideDownIn
+    post_body: slideDownIn
+    coll_header: slideLeftIn
     # Only for Pisces | Gemini.
     sidebar: slideUpIn
     display: always
