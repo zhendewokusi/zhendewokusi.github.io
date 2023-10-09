@@ -28,7 +28,7 @@ custom_file_path:
   #postMeta: source/_data/post-meta.swig
   #postBodyEnd: source/_data/post-body-end.swig
   #footer: source/_data/footer.swig
-  #bodyEnd: source/_data/body-end.swig
+  bodyEnd: source/_data/body-end.swig
   variable: source/_data/variables.styl
   #mixin: source/_data/mixins.styl
   style: source/_data/styles.styl
@@ -996,3 +996,26 @@ vendors:
 css: css
 js: js
 images: images
+
+# 鼠标点击特效
+# mouse click effect: fireworks | explosion | love
+cursor_effect: love
+
+# 黑夜模式
+# Darkmode JS
+# For more information: https://github.com/rqh656418510/hexo-next-darkmode, https://github.com/sandoche/Darkmode.js
+darkmode_js:
+  enable: false
+  bottom: '64px' # default: '32px'
+  right: 'unset' # default: '32px'
+  left: '32px' # default: 'unset'
+  time: '0.5s' # default: '0.3s'
+  mixColor: 'transparent' # default: '#fff'
+  backgroundColor: 'transparent' # default: '#fff'
+  buttonColorDark: '#100f2c' # default: '#100f2c'
+  buttonColorLight: '#fff' # default: '#fff'
+  isActivated: false # default false
+  saveInCookies: true # default: true
+  label: '🌓' # default: ''
+  autoMatchOsTheme: true # default: true
+  libUrl: # Set custom library cdn url for Darkmode.js
