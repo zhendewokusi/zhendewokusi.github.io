@@ -20,20 +20,20 @@
     var CONFIG = {"hostname":"zhendewokusi.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":40,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn","display":"always"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="我是一个热爱Linux的在校大二非计算机专业的本科牲！欢迎来我的博客，一起学习和交流！">
-<meta property="og:type" content="website">
-<meta property="og:title" content="关于我">
-<meta property="og:url" content="http://zhendewokusi.github.io/about/index.html">
+  <meta name="description" content="运算符优先级的问题假如有下面的代码。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="运算符优先级">
+<meta property="og:url" content="http://zhendewokusi.github.io/2023/10/11/%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7/index.html">
 <meta property="og:site_name" content="元芳你怎么看">
-<meta property="og:description" content="我是一个热爱Linux的在校大二非计算机专业的本科牲！欢迎来我的博客，一起学习和交流！">
+<meta property="og:description" content="运算符优先级的问题假如有下面的代码。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2023-09-26T18:56:28.000Z">
+<meta property="article:published_time" content="2023-10-11T11:25:42.000Z">
 <meta property="article:modified_time" content="2023-10-11T11:29:33.938Z">
 <meta property="article:author" content="zhendewokusi">
-<meta property="article:tag" content="c++,c,linux">
+<meta property="article:tag" content="C语言">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://zhendewokusi.github.io/about/">
+<link rel="canonical" href="http://zhendewokusi.github.io/2023/10/11/%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7/">
 
 
 <script id="page-configurations">
@@ -41,13 +41,12 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>关于我 | 元芳你怎么看
-</title>
+  <title>运算符优先级 | 元芳你怎么看</title>
   
 
 
@@ -158,44 +157,105 @@
       <div class="main-inner">
         <div class="content-wrap">
           
-  
-  
 
-          <div class="content page posts-expand">
+          <div class="content post posts-expand">
             
 
     
-    
-    
-    <div class="post-block" lang="zh-CN">
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/11/%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhendewokusi">
+      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="元芳你怎么看">
+    </span>
       <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          运算符优先级
+        </h1>
 
-<h1 class="post-title" itemprop="name headline">关于我
-</h1>
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
 
-<div class="post-meta">
+              <time title="创建时间：2023-10-11 19:25:42 / 修改时间：19:29:33" itemprop="dateCreated datePublished" datetime="2023-10-11T19:25:42+08:00">2023-10-11</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="运算符优先级的问题"><a href="#运算符优先级的问题" class="headerlink" title="运算符优先级的问题"></a>运算符优先级的问题</h3><p>假如有下面的代码。<span id="more"></span>你想在特定条件下让 <code>high</code>变量的二进制形式左移四位然后加上&#96;low&#96;&#96;:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(flag &amp; tmp)&#123;</span><br><span class="line">    num1 = high&lt;&lt;<span class="number">4</span> + low;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>或许你会为了代码可读性，将其更改成下面的格式：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(flag &amp; tmp != <span class="number">0</span>) &#123;</span><br><span class="line">    num1 = high&lt;&lt;<span class="number">4</span> + low;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>很不幸的是，这两个 <code>if</code>语句不能画上等号,因为你没有考虑到运算符优先级的问题，下面的语句实际上是：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(flag &amp; (tmp != <span class="number">0</span>)) &#123;</span><br><span class="line">    num1 = high&lt;&lt;(<span class="number">4</span> + low);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="运算符优先级规则"><a href="#运算符优先级规则" class="headerlink" title="运算符优先级规则"></a>运算符优先级规则</h3><p>是不是与你预想的差之千里，为了更好的使用 C 语言，每个 C coder 都应该牢记下面的几点:</p>
+<ul>
+<li>优先级最高的不是真正意义上的运算符。eg：数组下表、函数调用操作符、各结构成员选择操作符。它们都是自左向右结合的，这也就是为什么 <code>a.b.c</code>的含义是<code>(a.b).c</code>而不是 <code>a.(b.c)</code>。</li>
+<li>单目运算符（概念不清楚就搜一下）的优先级仅次于前述运算符（<code>++</code>运算符 <code>--</code>运算符）。<br>上一条也说了：函数调用操作符是优先级最高的。假如<code>p</code>是一个函数指针，我想通过这个指针来调用对应的函数，那么<code>*p()</code>显而易见错了，因为它会被编译器理解成<code>*(p())</code>，而我想要的效果是 <code>(*p)()</code>。<br>再举个关于前述运算符的例子。<code>*p++</code>，它会被编译器理解成<code>*(p++)</code>，而希望的效果是<code>(*p)++</code>。</li>
+<li>比单目运算符优先级低的就是双目运算符了。双目运算符中：算术运算符&gt;移位运算符&gt;关系运算符&gt;逻辑运算符&gt;赋值运算符&gt;条件运算符（三目运算符）。<br>这一条中最重要的几个点就是：</li>
+</ul>
+<ol>
+<li>任何一个逻辑运算符的优先级都要低于任何一个关系运算符。</li>
+<li>移位运算符的优先级比算术运算符低，但是高于关系运算符。</li>
+<li>6 个关系运算符的优先级不同。其中<code>==</code> 和 <code>!=</code> 优先级低于其他关系运算符的优先级。</li>
+<li>逻辑运算符中。按位运算符优先级高于顺序运算符。每个“与”运算符优先级高于对应的“或”运算符。异或运算符介于按位与运算符和按位或运算符之间。</li>
+<li>所有的赋值运算符优先级都是一样的（右 -&gt; 左）。eg：<code>a = b = 0;</code> 就是将 <code>a,b</code>赋值为 0。</li>
+<li>逗号运算符的优先级最低。<br>例子是举不完，记住这几条结论，在敲代码的时候多留意运算符优先级的问题，用的多了自然就熟练了。<br>也有个偷巧的方法：疯狂加括号，你想让谁先运行就给谁加括号，但是这样不好，会让代码看起来臃肿，不推荐。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C%E8%AF%AD%E8%A8%80/" rel="tag"># C语言</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/09/%E6%9D%A1%E6%AC%BE23/" rel="prev" title="条款23：理解std::move 和 std::forward">
+      <i class="fa fa-chevron-left"></i> 条款23：理解std::move 和 std::forward
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/10/11/hello-world/" rel="next" title="Hello World">
+      Hello World <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
   
 
-</div>
-
-</header>
-
-      
-      
-      
-      <div class="post-body">
-          <p>我是一个热爱Linux的在校大二非计算机专业的本科牲！<br>欢迎来我的博客，一起学习和交流！</p>
-
-      </div>
-      
-      
-      
-    </div>
-    
-
-    
-    
-    
 
 
           </div>
@@ -246,6 +306,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">运算符优先级的问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7%E8%A7%84%E5%88%99"><span class="nav-number">2.</span> <span class="nav-text">运算符优先级规则</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
