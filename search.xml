@@ -2,7 +2,7 @@
 <search>
   <entry>
     <title>Hello World</title>
-    <url>/2023/10/11/hello-world/</url>
+    <url>/2023/10/12/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.<span id="more"></span></p>
 <h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
 
@@ -19,6 +19,87 @@
 ]]></content>
       <tags>
         <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>函数声明</title>
+    <url>/2023/10/12/%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E/</url>
+    <content><![CDATA[<h3 id="正确理解函数声明"><a href="#正确理解函数声明" class="headerlink" title="正确理解函数声明"></a>正确理解函数声明</h3><p>看书的时候看到一个很抽象的语句：<br><code>(*(void(*)())0)();</code><br>想必每个C程序员看到这条语句都会觉得难绷。这个表达式实际上是在尝试调用位于地址0处的函数指针。在大多数操作系统中，访问地址0通常是非法的，因为它可能导致程序崩溃或产生未定义的行为。这种操作在一些特殊的底层编程场景中可能有用，但在通常的应用程序中应该避免使用，因为它不安全且不可移植。</p>
+<span id="more"></span>
+
+
+<p>请各位牢记一条十分简单的规则：<strong>按照使用的方式来声明。</strong></p>
+<h4 id="声明符与表达式"><a href="#声明符与表达式" class="headerlink" title="声明符与表达式"></a>声明符与表达式</h4><p>声明符（Declaration Specifier）和表达式（Expression）是编程中的两个不同概念，它们有以下异同点：</p>
+<p><strong>相同点</strong>：</p>
+<ol>
+<li><p><strong>语法元素</strong>：声明符和表达式都是编程语言的语法元素，它们用于构建和操作程序中的数据和操作。</p>
+</li>
+<li><p><strong>用途</strong>：声明符用于声明（或定义）变量、函数、类型或其他标识符，以便程序正确识别和使用这些标识符。表达式用于表示和计算值，它可以包括操作数和操作符，用于执行特定的计算操作。</p>
+</li>
+</ol>
+<p><strong>不同点</strong>：</p>
+<ol>
+<li><p><strong>含义和作用</strong>：</p>
+<ul>
+<li><strong>声明符</strong> 用于描述标识符的性质和类型，但不执行计算或操作。它告诉编译器如何分配内存和如何解释标识符的内容。</li>
+<li><strong>表达式</strong> 用于表示和计算值，执行特定的计算操作，返回一个结果。表达式可以包括常量、变量、运算符和函数调用等，用于生成新的值。</li>
+</ul>
+</li>
+<li><p><strong>例子</strong>：</p>
+<ul>
+<li>声明符示例：<code>int x;</code>（声明一个整数变量x）、<code>void myFunction();</code>（声明一个没有返回值的函数myFunction）。</li>
+<li>表达式示例：<code>x + 5</code>（计算x与5的和，返回一个值）、<code>myFunction()</code>（调用函数myFunction，返回其结果）。</li>
+</ul>
+</li>
+<li><p><strong>上下文</strong>：</p>
+<ul>
+<li><strong>声明符</strong> 通常出现在变量、函数、类型或其他标识符的声明语句中，例如在变量声明、函数原型、结构体定义等地方。</li>
+<li><strong>表达式</strong> 通常出现在赋值语句、算术运算、逻辑运算、函数调用等地方，用于执行操作和计算值。</li>
+</ul>
+</li>
+</ol>
+<p>总之，声明符用于描述标识符的性质和类型，而表达式用于表示和计算值。它们在编程中扮演不同的角色，但都是构建程序逻辑的重要组成部分。</p>
+<h4 id="声明"><a href="#声明" class="headerlink" title="声明"></a>声明</h4><p>任何的C变量的声明都由两部分组成：类型，声明符。最简单的声明符就是单个变量，比如：</p>
+<p><code>int tmp;</code></p>
+<p>这个声明的含义是：当对其求值时，tmp的类型是<code>int</code>。<br>当然也可以这样写：</p>
+<p><code>int ((tmp));</code></p>
+<p>这个声明的含义是：当对其求值时，((tmp))的类型是<code>int</code>型，因此也可以推出来tmp的类型是<code>int</code>。<br>同理的逻辑也适用于函数和指针的声明：</p>
+<p><code>double func();</code></p>
+<p>这个声明的含义是：<code>func()</code>求值的结果是<code>double</code>类型。也就是说，<code>func</code>是一个返回值为<code>double</code>类型的函数。</p>
+<p><code>int* p;</code></p>
+<p>这个声明的含义是：<code>*p</code>是一个<code>int</code>型数据。也就是说，<code>p</code>是一个指向<code>int</code>型数据的指针。</p>
+<p>将上面的声明组合一下：</p>
+<p><code>double *func2(),(*func3)();</code></p>
+<p>表示<code>*func2()</code>和<code>(*func3())</code>都是浮点类型的声明符。因为<code>()</code>优先级高于<code>*</code>，可以得出：<br><code>func2</code>是一个函数，该函数的返回值是指向<code>double</code>类型数据的指针。<br><code>func3</code>是一个函数指针，其指向的函数的返回值类型是<code>double</code>。</p>
+<h4 id="类型转换符"><a href="#类型转换符" class="headerlink" title="类型转换符"></a>类型转换符</h4><p>类型转换符是一种在编程语言中用于改变一个值的数据类型的操作符或关键字。类型转换符允许程序员显式地指定将一个数据类型转换为另一个数据类型的方式。这种操作通常称为类型转换或强制类型转换。在理解了上面的知识点后，如果得到一个声明好的、给定类型的变量，得到它的类型转换符也就不是一件难事。例如：</p>
+<p><code>float (*tmp)();</code></p>
+<p>表示<code>tmp</code>是一个指向返回值为<code>float</code>类型的函数的指针，那么：</p>
+<p><code>float (*)()</code></p>
+<p>也就表示为一个“一个指向返回值为<code>float</code>类型的函数的指针”的类型转换符。</p>
+<p>可以看下面代码再练习练习：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">myFunction</span><span class="params">(<span class="type">char</span> *str, <span class="type">int</span> num)</span> &#123;</span><br><span class="line">    <span class="comment">// 函数实现</span></span><br><span class="line">    <span class="keyword">return</span> num * <span class="number">2</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 声明一个函数指针，并初始化为指向myFunction的指针</span></span><br><span class="line">    <span class="type">int</span> (*h)(<span class="type">char</span> *, <span class="type">int</span>);</span><br><span class="line">    <span class="comment">// 这里的myFunction的类型就是 int (*)(char *, int),为了便于理解我就全部写出来了</span></span><br><span class="line">    h = (<span class="type">int</span> (*)(<span class="type">char</span> *, <span class="type">int</span>))myFunction;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 现在可以使用h来调用函数</span></span><br><span class="line">    <span class="type">int</span> result = h(<span class="string">&quot;Hello&quot;</span>, <span class="number">1</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, result);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>注意：</p>
+<p><code>(*fp)();</code></p>
+<p>fp是一个<strong>函数指针</strong>，那么<code>*fp</code>就是该指针指向的函数，所以<code>(*fp)()</code>就是调用这个函数的方式。但是，ANSI C 标准允许程序员将上式子简写成<code>fp()</code>，这只是一种<strong>简写</strong>。</p>
+<p>看的仔细的读者就会发现，我上面代码调用函数也使用了简写。因此我上面的代码中：<code>int result = h(&quot;Hello&quot;, 1);</code>实际上是<code>int result = (*h)(&quot;Hello&quot;, 1);</code>。</p>
+<h4 id="解答"><a href="#解答" class="headerlink" title="解答"></a>解答</h4><p><code>(*(void(*)())0)();</code>被设计的目的是为了在计算机启动的时候，硬件将调用首地址为0位置的子例程。</p>
+<p>你可能会想，为什么不直接：</p>
+<p><code>(* 0)()</code></p>
+<p>可惜编译器是笨重的。因为运算符<code>*</code>必须要一个指针来进行解引用。而且这个指针还应该是一个函数指针，这样经过运算符<code>*</code>作用后的结果才能作为函数被调用。因此，上式子对<code>0</code>要进行强制类型转换为一个“指向返回值为void类型的函数的指针”。因此就有了下式：</p>
+<p><code>(*(void(*)())0)();</code>,让我解释一下这个表达式的各个部分：</p>
+<ol>
+<li><p><code>void(*)()</code>：这部分表示一个函数指针类型，它指向一个没有参数并且没有返回值的函数。这是一个函数指针类型的定义，但没有指向任何有效函数。</p>
+</li>
+<li><p><code>0</code>：这是一个空指针，它不指向任何内存地址。</p>
+</li>
+<li><p><code>(*(void(*)())0)</code>：这部分将空指针转换为一个函数指针，然后尝试通过解引用这个函数指针来调用一个函数。</p>
+</li>
+<li><p>最后的 <code>();</code> 尝试调用解引用的函数指针，但由于函数指针不指向有效函数，这会导致未定义行为，通常会导致程序崩溃或其他不可预测的结果。</p>
+</li>
+</ol>
+]]></content>
+      <tags>
+        <tag>C语言</tag>
       </tags>
   </entry>
   <entry>
