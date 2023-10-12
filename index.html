@@ -162,6 +162,75 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/12/%E6%9D%A1%E6%AC%BE25/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhendewokusi">
+      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="元芳你怎么看">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/10/12/%E6%9D%A1%E6%AC%BE25/" class="post-title-link" itemprop="url">条款25:针对右值引用实施std::move，针对万能引用实施std::forward</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2023-10-12 20:35:45 / 修改时间：20:39:27" itemprop="dateCreated datePublished" datetime="2023-10-12T20:35:45+08:00">2023-10-12</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="重载？"><a href="#重载？" class="headerlink" title="重载？"></a>重载？</h3><p>在条款23的基础上，再来细说一下<code>std::move</code>和<code>std::forward</code>。看这个例子：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Data</span> &#123;&#125;;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Entity</span> &#123;</span><br><span class="line">   <span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">setName</span><span class="params">(T&amp;&amp; newName)</span> </span>&#123;</span><br><span class="line">        name = std::<span class="built_in">move</span>(newName);</span><br><span class="line">    &#125;</span><br><span class="line">   <span class="keyword">private</span>:</span><br><span class="line">    std::string name;</span><br><span class="line">    std::shared_ptr&lt;Data&gt; ptr;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">std::string <span class="title">getEntityName</span><span class="params">()</span></span>;</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Entity e;</span><br><span class="line">    <span class="keyword">auto</span> n = <span class="built_in">getEntityName</span>();</span><br><span class="line">    e.<span class="built_in">setName</span>(n);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看着好像一切安好。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2023/10/12/%E6%9D%A1%E6%AC%BE25/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/12/%E6%9D%A1%E6%AC%BE24/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -187,7 +256,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2023-10-12 16:56:05 / 修改时间：18:00:35" itemprop="dateCreated datePublished" datetime="2023-10-12T16:56:05+08:00">2023-10-12</time>
+              <time title="创建时间：2023-10-12 16:56:05 / 修改时间：20:39:27" itemprop="dateCreated datePublished" datetime="2023-10-12T16:56:05+08:00">2023-10-12</time>
             </span>
 
           
@@ -260,7 +329,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-12 18:00:35" itemprop="dateModified" datetime="2023-10-12T18:00:35+08:00">2023-10-12</time>
+                <time title="修改时间：2023-10-12 20:39:27" itemprop="dateModified" datetime="2023-10-12T20:39:27+08:00">2023-10-12</time>
               </span>
 
           
@@ -332,7 +401,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-12 18:00:35" itemprop="dateModified" datetime="2023-10-12T18:00:35+08:00">2023-10-12</time>
+                <time title="修改时间：2023-10-12 20:39:27" itemprop="dateModified" datetime="2023-10-12T20:39:27+08:00">2023-10-12</time>
               </span>
 
           
@@ -404,7 +473,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-12 18:00:35" itemprop="dateModified" datetime="2023-10-12T18:00:35+08:00">2023-10-12</time>
+                <time title="修改时间：2023-10-12 20:39:27" itemprop="dateModified" datetime="2023-10-12T20:39:27+08:00">2023-10-12</time>
               </span>
 
           
@@ -476,7 +545,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-12 18:00:35" itemprop="dateModified" datetime="2023-10-12T18:00:35+08:00">2023-10-12</time>
+                <time title="修改时间：2023-10-12 20:39:27" itemprop="dateModified" datetime="2023-10-12T20:39:27+08:00">2023-10-12</time>
               </span>
 
           
@@ -549,7 +618,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-12 18:00:35" itemprop="dateModified" datetime="2023-10-12T18:00:35+08:00">2023-10-12</time>
+                <time title="修改时间：2023-10-12 20:39:27" itemprop="dateModified" datetime="2023-10-12T20:39:27+08:00">2023-10-12</time>
               </span>
 
           
@@ -654,7 +723,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

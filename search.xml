@@ -221,6 +221,42 @@
       </tags>
   </entry>
   <entry>
+    <title>条款25:针对右值引用实施std::move，针对万能引用实施std::forward</title>
+    <url>/2023/10/12/%E6%9D%A1%E6%AC%BE25/</url>
+    <content><![CDATA[<h3 id="重载？"><a href="#重载？" class="headerlink" title="重载？"></a>重载？</h3><p>在条款23的基础上，再来细说一下<code>std::move</code>和<code>std::forward</code>。看这个例子：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Data</span> &#123;&#125;;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Entity</span> &#123;</span><br><span class="line">   <span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">setName</span><span class="params">(T&amp;&amp; newName)</span> </span>&#123;</span><br><span class="line">        name = std::<span class="built_in">move</span>(newName);</span><br><span class="line">    &#125;</span><br><span class="line">   <span class="keyword">private</span>:</span><br><span class="line">    std::string name;</span><br><span class="line">    std::shared_ptr&lt;Data&gt; ptr;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">std::string <span class="title">getEntityName</span><span class="params">()</span></span>;</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Entity e;</span><br><span class="line">    <span class="keyword">auto</span> n = <span class="built_in">getEntityName</span>();</span><br><span class="line">    e.<span class="built_in">setName</span>(n);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看着好像一切安好。<span id="more"></span>注意这里的<code>n</code>是局部变量，传递给<code>e.setName()</code>，调用者假定该函数对<code>n</code>只进行读操作是没有任何问题的。但是<code>setName()</code>内部使用了<code>std::move</code>将其引用的形参无条件强转成右值，因此<code>n</code>的数值就会被移入<code>e.name</code>。运行完<code>setName()</code>后，<code>n</code>就成了一个未知数。</p>
+<p>你会说：那我为啥要把形参声明称万能引用自讨苦吃，我直接为其分别重载左值和右值两个版本不就好了。你说的对，但是对的很难受。程序运行效率降低是其次，最主要的是代码难以维护以及扩展性太差。</p>
+<p>这个例子只有一个形参，还好处理，两个重载版本就行了。那么10个参数的呢？难不成你重载 (2^{10}) 个版本？有啥想不开的非要这么折磨自己。更别说有些函数模板会有无穷多个形参（比如：<code>std::make_shared</code>）</p>
+<h3 id="万能引用！"><a href="#万能引用！" class="headerlink" title="万能引用！"></a>万能引用！</h3><p>上面的例子修改如下，这样就不需要重载也能实现对应功能了：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Data</span> &#123;&#125;;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Entity</span> &#123;</span><br><span class="line">   <span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">setName</span><span class="params">(T&amp;&amp; newName)</span> </span>&#123;</span><br><span class="line">        name = std::forward&lt;T&gt;(newName); <span class="comment">// 使用 std::forward 来保持左值或右值性质</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">private</span>:</span><br><span class="line">    std::string name;</span><br><span class="line">    std::shared_ptr&lt;Data&gt; ptr;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">std::string <span class="title">getEntityName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;NewName&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Entity e;</span><br><span class="line">    <span class="keyword">auto</span> n = <span class="built_in">getEntityName</span>();</span><br><span class="line">    e.<span class="built_in">setName</span>(n);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="需要注意的点"><a href="#需要注意的点" class="headerlink" title="需要注意的点"></a>需要注意的点</h3><p>假设在某个函数中，你刚开始只用了一次该对<br>象，之后就对其实施<code>std::move</code>或者<code>std::forward</code>，这没有问题，需要注意的是，随着函数不断完善，如果在该函数中不止一次地绑定到右值引用或者万能引用，就会导致上面变量<code>n</code>就成了一个未知数的错误。因此，在这种情况下，只能在最后一次使用该引用的时候对其实施<code>std::move</code>或者<code>std::forward</code>来确保其他操作时候其值依旧存在。</p>
+<h3 id="std-move-if-noexcept"><a href="#std-move-if-noexcept" class="headerlink" title="std::move_if_noexcept"></a>std::move_if_noexcept</h3><p><code>std::move_if_noexcept</code> 通常用于优化移动操作，特别是在异常安全性方面。它可以帮助在一些情况下，当移动操作不会抛出异常时，避免不必要的拷贝。</p>
+<p>这个函数的典型用例是在容器类的 <code>emplace_back</code> 和 <code>emplace</code> 成员函数中，这些函数通常要求插入元素时提供的参数（构造元素的参数）不会抛出异常。这样可以确保在插入元素时，如果构造过程抛出异常，容器的状态不会受到破坏，因为元素的构造是在容器内完成的。</p>
+<p>考虑以下示例，使用 <code>std::move_if_noexcept</code> 在 <code>emplace_back</code> 中：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line">std::vector&lt;MyType&gt; myVector;</span><br><span class="line">myVector.<span class="built_in">emplace_back</span>(std::<span class="built_in">move_if_noexcept</span>(someValue));</span><br></pre></td></tr></table></figure>
+
+<p>在这里，<code>std::move_if_noexcept</code> 会检查 <code>someValue</code> 是否可以进行无异常移动，如果可以，它会使用移动操作，否则会进行拷贝操作。这有助于确保异常安全性，以避免在构造元素时抛出异常时，不会破坏容器的状态。</p>
+<p>要使用 <code>std::move_if_noexcept</code>，您需要确保在需要优化移动操作的情况下，并且对于元素类型的移动构造函数声明了 <code>noexcept</code> 说明符。这通常是在实现自定义类时要考虑的事情。</p>
+<p>总之，<code>std::move_if_noexcept</code> 是一种有助于提高性能并确保异常安全性的工具，但需要在适当的情况下使用它。</p>
+<h3 id="局部对象可能适用于返回值优化"><a href="#局部对象可能适用于返回值优化" class="headerlink" title="局部对象可能适用于返回值优化"></a>局部对象可能适用于返回值优化</h3><figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="function">Widget <span class="title">makeWidget</span> <span class="params">()</span>    <span class="comment">// 复制版本</span></span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line">    Widget w;           <span class="comment">// 局部变量</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">return</span> w;           <span class="comment">// 将w&quot;复制&quot;入返回值</span></span><br><span class="line"> &#125;</span><br><span class="line"><span class="comment">// 将&quot;复制&quot;转换为移动来进行优化？</span></span><br><span class="line"><span class="function">Widget <span class="title">makeWidget</span> <span class="params">()</span>    <span class="comment">// 移动版本</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Widget w;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">return</span> std::<span class="built_in">move</span>(w);   <span class="comment">//将w移入返回值，不能这样做！</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>很不幸，这样是不正确的。因为先人就是这样规定的。开个玩笑，因为先人已经比我们领先很多年想到并且解决了这里的优化问题。也就是熟知的RVO(返回值优化)。</p>
+<p>编译器如果要在一个桉之返回的函数里忽略对局部对象的复制（或移动），需要满足两个条件：</p>
+<ol>
+<li>局部对象和返回值性别相同</li>
+<li>返回的就是局部对象本身</li>
+</ol>
+<p>我们现在往上看“复制版本”的函数，两个条件均满足，所以进行返回值优化，实质上该函数并没有复制任何东西。而移动版本的函数不满足第二个规定，返回的不是本身而是引用，并没有优化，编译器就把返回值<code>w</code>移入函数的返回值存储的位置。<code>RVO</code>的那条福音后面又接着说明,即使实施<code>RVO</code>的前提条件满足,但编译器选择不执行复制省略的时候,返回对象必须作为右值处理。这么一来,就等于标准要求:当<code>RVO</code>的前提条件允许时,要么发生复制省略,要么<code>std:: move</code>隐式地被实施于返回的局部对象上。因此，上面的例子中复制版本的函数就可能被编译器优化成移动的版本。</p>
+<p>既然如此，就不要使用<code>std::move</code>或者<code>std::forward</code>来对可能适用于优化的局部对象处理。防止排除编译器<code>RVO</code>的实施机会。</p>
+]]></content>
+      <tags>
+        <tag>c++</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>运算符优先级</title>
     <url>/2023/10/11/%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7/</url>
     <content><![CDATA[<h3 id="运算符优先级的问题"><a href="#运算符优先级的问题" class="headerlink" title="运算符优先级的问题"></a>运算符优先级的问题</h3><p>假如有下面的代码。<span id="more"></span>你想在特定条件下让 <code>high</code>变量的二进制形式左移四位然后加上&#96;low&#96;&#96;:</p>
