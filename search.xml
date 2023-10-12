@@ -2,7 +2,7 @@
 <search>
   <entry>
     <title>Hello World</title>
-    <url>/2023/10/12/hello-world/</url>
+    <url>/2023/10/02/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.<span id="more"></span></p>
 <h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
 
@@ -23,7 +23,7 @@
   </entry>
   <entry>
     <title>函数声明</title>
-    <url>/2023/10/12/%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E/</url>
+    <url>/2023/10/11/%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E/</url>
     <content><![CDATA[<h3 id="正确理解函数声明"><a href="#正确理解函数声明" class="headerlink" title="正确理解函数声明"></a>正确理解函数声明</h3><p>看书的时候看到一个很抽象的语句：<br><code>(*(void(*)())0)();</code><br>想必每个C程序员看到这条语句都会觉得难绷。这个表达式实际上是在尝试调用位于地址0处的函数指针。在大多数操作系统中，访问地址0通常是非法的，因为它可能导致程序崩溃或产生未定义的行为。这种操作在一些特殊的底层编程场景中可能有用，但在通常的应用程序中应该避免使用，因为它不安全且不可移植。</p>
 <span id="more"></span>
 
@@ -171,6 +171,50 @@
 
 <p>我们希望<code>func2</code>传入的是一个左值时，执行<code>func</code>的左值的版本，传入的是个右值的时候执行<code>func</code>重载的右值的版本。但是函数形参都是左值，也就是说这里的<code>param</code>一直是左值，不论传入<code>func2</code>的是左值还是右值，都只会执行<code>func</code>的左值版本。此时，<code>std::forward</code>就做到了这件事：仅当实参是右值完成初始化的时候才会执行向右值的强制类型转换。</p>
 <p>那么<code>std::forward</code>是如何知道实参是否通过右值来完成初始化的呢？其实是通过传入的函数模板形参<code>T</code>来实现的(详细参见条款 28)。</p>
+]]></content>
+      <tags>
+        <tag>c++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>条款24:区分万能引用和右值引用</title>
+    <url>/2023/10/12/%E6%9D%A1%E6%AC%BE24/</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>不是所有的<code>&amp;&amp;</code>都是右值引用！</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span> <span class="params">(Widget&amp;&amp; param)</span></span>;    <span class="comment">// 右值引用</span></span><br><span class="line">Widget&amp;&amp; varl = <span class="built_in">Widget</span>();   <span class="comment">// 右值引用</span></span><br><span class="line"><span class="keyword">auto</span>&amp;&amp; var2 = van;          <span class="comment">// 不是右值引用</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(std: :vector&lt;T&gt;&amp;&amp; param)</span></span>;    <span class="comment">// 右值引用</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T&amp;&amp; param)</span></span>;          <span class="comment">// 不是右值引用</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>好了，看完CPU烧了，到底是不是右值引用呀，我也不知道呀。<br>实际上, “ <code>T&amp;&amp;</code> ”有两种不同的含义。其中一种含义,理所当然,是右值引用。正如期望,它们仅仅会绑定到右值,而其主要的存在理由,在于识别出可移对象。“ <code>T&amp;&amp;</code> “的另一种含义,则表示其既可以是右值引用,亦可以是左值引用。它可以绑定到右值，也可以像左值引用一样，也可以绑定在<code>const</code>对象或者非<code>const</code>对象，也可以绑定在<code>volatile</code>对象或者非<code>volatile</code>对象,它灵活度高到被成为<em>万能引用</em>。</p>
+<h3 id="万能引用的场景"><a href="#万能引用的场景" class="headerlink" title="万能引用的场景"></a>万能引用的场景</h3><ol>
+<li>函数模板的推导</li>
+<li>auto声明</li>
+</ol>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">auto</span>&amp;&amp; var2 = van;          <span class="comment">// 不是右值引用</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T&amp;&amp; param)</span></span>;          <span class="comment">// 不是右值引用</span></span><br><span class="line"><span class="comment">//在这种情况下，类型 T 是需要从参数中推导的，因为 param 的类型是未知的，这时编译器将根据参数类型来推导 T 的类型。</span></span><br></pre></td></tr></table></figure>
+<p>这两个场景的共同之处：都涉及<strong>型别推导</strong>。如果看到了<code>T&amp;&amp;</code>但是没有型别推导，那么就可以确定是右值引用。</p>
+<h3 id="万能引用的条件"><a href="#万能引用的条件" class="headerlink" title="万能引用的条件"></a>万能引用的条件</h3><p>万能引用的特点是它们具有两个条件：</p>
+<ol>
+<li><p><strong>必须</strong>在模板内进行型别推导：这意味着类型 T 必须在模板函数或模板类内部通过类型推导而不是显式指定。这是因为模板会根据实际传递给函数或类的参数类型来推导 T 的类型。</p>
+</li>
+<li><p>型别声明的形式<strong>必须</strong>是 <code>T&amp;&amp;</code>：这表示右值引用的声明必须以 T&amp;&amp; 的形式出现，以指示它可以成为万能引用。</p>
+</li>
+</ol>
+<p>如果这两个条件同时满足，那么右值引用就被认为是万能引用。</p>
+<p>这也就是为什么上面提到的<code>void f(std: :vector&lt;T&gt;&amp;&amp; param);</code>是右值引用而不是万能引用。它虽然涉及型别推导，但它的型别声明形式不是 <code>T&amp;&amp;</code>，而是 <code>std::vector&lt;T&gt;&amp;&amp;</code>。因此，这只是一个右值引用，而不是万能引用。</p>
+<p>即使只是一个<code>const</code>的存在，也不满足条件2,就成为了右值引用。</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">const</span> T&amp;&amp; param)</span></span>;    <span class="comment">//右值引用</span></span><br></pre></td></tr></table></figure>
+
+<p>如果在一个模板内看到一个函数形参为<code>T&amp;&amp;</code>也不能想当然的认为它是万能引用。看下面的例子</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span> , <span class="keyword">class</span> <span class="title class_">Allocator</span> = allocator&lt;T&gt;&gt;</span><br><span class="line"><span class="keyword">class</span> vector&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="type">void</span> <span class="built_in">push_back</span>(T&amp;&amp; x);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>push_back</code>的形参满足条件，但是条件一：型别推导，它并没有涉及。因为该函数作为<code>vector</code>类的一部分，如果没有特定<code>vector</code>类实例，就没有该函数（C++类的基础）。如果给定一个<code>vector</code>实例，那么<code>push_back</code>的形参就会被具体化。比如给定一个实例:</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line">std::vector&lt;Entity&gt; entity;</span><br></pre></td></tr></table></figure>
+<p>vector模板就会被具化为：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">vector</span>&lt;Entity, allocator&lt;Entity&gt;&gt;&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">push_back</span><span class="params">(Entity&amp;&amp; x)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看到，<code>push_back</code>函数并没有涉及类型推导。因此其参数不是万能引用。</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span> , <span class="keyword">class</span> <span class="title class_">Allocator</span> = allocator&lt;T&gt;&gt;</span><br><span class="line"><span class="keyword">class</span> vector&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">template</span>&lt;<span class="keyword">class</span>... Args&gt;</span><br><span class="line">    <span class="type">void</span> <span class="built_in">emplace_back</span>(Args&amp;&amp;... args);  <span class="comment">// 万能引用</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>args</code>涉及到了类型推导，因此是万能引用。</p>
+<h4 id="多说一点"><a href="#多说一点" class="headerlink" title="多说一点"></a>多说一点</h4><p>有些人不清楚<code>template&lt;class... Args&gt;</code>中的<code>...</code>是什么，其实很简单，”…” 是用来表示可变参数模板的语法。它用于表示函数或类模板可以接受可变数量的参数。具体来说，<code>Args</code> 是一个参数包，它可以包含零个或多个模板参数。<code>Args&amp;&amp;... args</code> 表示您可以将任意数量的参数传递给 <code>emplace_back</code> 函数，每个参数都会被表示为 <code>Args</code> 类型的右值引用。这种语法通常用于实现”完美转发”。（后面会提到）</p>
+<p>而前面提到的另一种场景,auto声明，在<code>C++11</code>中不怎么普遍。而在<code>C++14</code>中，它现身的机会就更多了，因为<code>C++14</code>中的<code>lambda</code>表达式中可以声明<code>auto&amp;&amp; </code>的形参。</p>
+<h3 id="万能引用的作用"><a href="#万能引用的作用" class="headerlink" title="万能引用的作用"></a>万能引用的作用</h3><p>这种引用在模板编程中非常有用，因为它们能够保持对传递给它们的参数的左值或右值性质，并且可以实现完美转发，使它们适用于各种不同类型的参数。</p>
 ]]></content>
       <tags>
         <tag>c++</tag>

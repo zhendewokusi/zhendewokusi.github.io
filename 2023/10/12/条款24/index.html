@@ -20,20 +20,20 @@
     var CONFIG = {"hostname":"zhendewokusi.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":40,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn","display":"always"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+  <meta name="description" content="前言不是所有的&amp;&amp;都是右值引用！ 12345678void f (Widget&amp;&amp; param);    &#x2F;&#x2F; 右值引用Widget&amp;&amp; varl &#x3D; Widget();   &#x2F;&#x2F; 右值引用auto&amp;&amp; var2 &#x3D; van;          &#x2F;&#x2F; 不是右值引用template&lt;typename T&gt;void f(std">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://zhendewokusi.github.io/2023/10/12/hello-world/index.html">
+<meta property="og:title" content="条款24:区分万能引用和右值引用">
+<meta property="og:url" content="http://zhendewokusi.github.io/2023/10/12/%E6%9D%A1%E6%AC%BE24/index.html">
 <meta property="og:site_name" content="元芳你怎么看">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+<meta property="og:description" content="前言不是所有的&amp;&amp;都是右值引用！ 12345678void f (Widget&amp;&amp; param);    &#x2F;&#x2F; 右值引用Widget&amp;&amp; varl &#x3D; Widget();   &#x2F;&#x2F; 右值引用auto&amp;&amp; var2 &#x3D; van;          &#x2F;&#x2F; 不是右值引用template&lt;typename T&gt;void f(std">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2023-10-12T08:51:29.038Z">
-<meta property="article:modified_time" content="2023-10-12T08:51:29.038Z">
+<meta property="article:published_time" content="2023-10-12T08:56:05.000Z">
+<meta property="article:modified_time" content="2023-10-12T10:00:35.660Z">
 <meta property="article:author" content="zhendewokusi">
-<meta property="article:tag" content="hexo">
+<meta property="article:tag" content="c++">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://zhendewokusi.github.io/2023/10/12/hello-world/">
+<link rel="canonical" href="http://zhendewokusi.github.io/2023/10/12/%E6%9D%A1%E6%AC%BE24/">
 
 
 <script id="page-configurations">
@@ -46,7 +46,7 @@
   };
 </script>
 
-  <title>Hello World | 元芳你怎么看</title>
+  <title>条款24:区分万能引用和右值引用 | 元芳你怎么看</title>
   
 
 
@@ -165,7 +165,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/12/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/12/%E6%9D%A1%E6%AC%BE24/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -178,7 +178,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Hello World
+          条款24:区分万能引用和右值引用
         </h1>
 
         <div class="post-meta">
@@ -187,8 +187,9 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
+              
 
-              <time title="创建时间：2023-10-12 16:51:29" itemprop="dateCreated datePublished" datetime="2023-10-12T16:51:29+08:00">2023-10-12</time>
+              <time title="创建时间：2023-10-12 16:56:05 / 修改时间：18:00:35" itemprop="dateCreated datePublished" datetime="2023-10-12T16:56:05+08:00">2023-10-12</time>
             </span>
 
           
@@ -202,19 +203,42 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.<span id="more"></span></p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>不是所有的<code>&amp;&amp;</code>都是右值引用！</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span> <span class="params">(Widget&amp;&amp; param)</span></span>;    <span class="comment">// 右值引用</span></span><br><span class="line">Widget&amp;&amp; varl = <span class="built_in">Widget</span>();   <span class="comment">// 右值引用</span></span><br><span class="line"><span class="keyword">auto</span>&amp;&amp; var2 = van;          <span class="comment">// 不是右值引用</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(std: :vector&lt;T&gt;&amp;&amp; param)</span></span>;    <span class="comment">// 右值引用</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T&amp;&amp; param)</span></span>;          <span class="comment">// 不是右值引用</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>好了，看完CPU烧了，到底是不是右值引用呀，我也不知道呀。<br>实际上, “ <code>T&amp;&amp;</code> ”有两种不同的含义。其中一种含义,理所当然,是右值引用。正如期望,它们仅仅会绑定到右值,而其主要的存在理由,在于识别出可移对象。“ <code>T&amp;&amp;</code> “的另一种含义,则表示其既可以是右值引用,亦可以是左值引用。它可以绑定到右值，也可以像左值引用一样，也可以绑定在<code>const</code>对象或者非<code>const</code>对象，也可以绑定在<code>volatile</code>对象或者非<code>volatile</code>对象,它灵活度高到被成为<em>万能引用</em>。</p>
+<h3 id="万能引用的场景"><a href="#万能引用的场景" class="headerlink" title="万能引用的场景"></a>万能引用的场景</h3><ol>
+<li>函数模板的推导</li>
+<li>auto声明</li>
+</ol>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span>&amp;&amp; var2 = van;          <span class="comment">// 不是右值引用</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T&amp;&amp; param)</span></span>;          <span class="comment">// 不是右值引用</span></span><br><span class="line"><span class="comment">//在这种情况下，类型 T 是需要从参数中推导的，因为 param 的类型是未知的，这时编译器将根据参数类型来推导 T 的类型。</span></span><br></pre></td></tr></table></figure>
+<p>这两个场景的共同之处：都涉及<strong>型别推导</strong>。如果看到了<code>T&amp;&amp;</code>但是没有型别推导，那么就可以确定是右值引用。</p>
+<h3 id="万能引用的条件"><a href="#万能引用的条件" class="headerlink" title="万能引用的条件"></a>万能引用的条件</h3><p>万能引用的特点是它们具有两个条件：</p>
+<ol>
+<li><p><strong>必须</strong>在模板内进行型别推导：这意味着类型 T 必须在模板函数或模板类内部通过类型推导而不是显式指定。这是因为模板会根据实际传递给函数或类的参数类型来推导 T 的类型。</p>
+</li>
+<li><p>型别声明的形式<strong>必须</strong>是 <code>T&amp;&amp;</code>：这表示右值引用的声明必须以 T&amp;&amp; 的形式出现，以指示它可以成为万能引用。</p>
+</li>
+</ol>
+<p>如果这两个条件同时满足，那么右值引用就被认为是万能引用。</p>
+<p>这也就是为什么上面提到的<code>void f(std: :vector&lt;T&gt;&amp;&amp; param);</code>是右值引用而不是万能引用。它虽然涉及型别推导，但它的型别声明形式不是 <code>T&amp;&amp;</code>，而是 <code>std::vector&lt;T&gt;&amp;&amp;</code>。因此，这只是一个右值引用，而不是万能引用。</p>
+<p>即使只是一个<code>const</code>的存在，也不满足条件2,就成为了右值引用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">const</span> T&amp;&amp; param)</span></span>;    <span class="comment">//右值引用</span></span><br></pre></td></tr></table></figure>
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>如果在一个模板内看到一个函数形参为<code>T&amp;&amp;</code>也不能想当然的认为它是万能引用。看下面的例子</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span> , <span class="keyword">class</span> <span class="title class_">Allocator</span> = allocator&lt;T&gt;&gt;</span><br><span class="line"><span class="keyword">class</span> vector&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="type">void</span> <span class="built_in">push_back</span>(T&amp;&amp; x);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+<p><code>push_back</code>的形参满足条件，但是条件一：型别推导，它并没有涉及。因为该函数作为<code>vector</code>类的一部分，如果没有特定<code>vector</code>类实例，就没有该函数（C++类的基础）。如果给定一个<code>vector</code>实例，那么<code>push_back</code>的形参就会被具体化。比如给定一个实例:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">std::vector&lt;Entity&gt; entity;</span><br></pre></td></tr></table></figure>
+<p>vector模板就会被具化为：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">vector</span>&lt;Entity, allocator&lt;Entity&gt;&gt;&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">push_back</span><span class="params">(Entity&amp;&amp; x)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看到，<code>push_back</code>函数并没有涉及类型推导。因此其参数不是万能引用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span> , <span class="keyword">class</span> <span class="title class_">Allocator</span> = allocator&lt;T&gt;&gt;</span><br><span class="line"><span class="keyword">class</span> vector&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">template</span>&lt;<span class="keyword">class</span>... Args&gt;</span><br><span class="line">    <span class="type">void</span> <span class="built_in">emplace_back</span>(Args&amp;&amp;... args);  <span class="comment">// 万能引用</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>args</code>涉及到了类型推导，因此是万能引用。</p>
+<h4 id="多说一点"><a href="#多说一点" class="headerlink" title="多说一点"></a>多说一点</h4><p>有些人不清楚<code>template&lt;class... Args&gt;</code>中的<code>...</code>是什么，其实很简单，”…” 是用来表示可变参数模板的语法。它用于表示函数或类模板可以接受可变数量的参数。具体来说，<code>Args</code> 是一个参数包，它可以包含零个或多个模板参数。<code>Args&amp;&amp;... args</code> 表示您可以将任意数量的参数传递给 <code>emplace_back</code> 函数，每个参数都会被表示为 <code>Args</code> 类型的右值引用。这种语法通常用于实现”完美转发”。（后面会提到）</p>
+<p>而前面提到的另一种场景,auto声明，在<code>C++11</code>中不怎么普遍。而在<code>C++14</code>中，它现身的机会就更多了，因为<code>C++14</code>中的<code>lambda</code>表达式中可以声明<code>auto&amp;&amp; </code>的形参。</p>
+<h3 id="万能引用的作用"><a href="#万能引用的作用" class="headerlink" title="万能引用的作用"></a>万能引用的作用</h3><p>这种引用在模板编程中非常有用，因为它们能够保持对传递给它们的参数的左值或右值性质，并且可以实现完美转发，使它们适用于各种不同类型的参数。</p>
 
     </div>
 
@@ -224,7 +248,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/hexo/" rel="tag"># hexo</a>
+              <a href="/tags/c/" rel="tag"># c++</a>
           </div>
 
         
@@ -233,13 +257,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2023/10/11/%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7/" rel="prev" title="运算符优先级">
-      <i class="fa fa-chevron-left"></i> 运算符优先级
+    <a href="/2023/10/11/%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E/" rel="prev" title="函数声明">
+      <i class="fa fa-chevron-left"></i> 函数声明
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2023/10/12/%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E/" rel="next" title="函数声明">
-      函数声明 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -298,7 +319,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Quick-Start"><span class="nav-number">1.</span> <span class="nav-text">Quick Start</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Create-a-new-post"><span class="nav-number">1.1.</span> <span class="nav-text">Create a new post</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Run-server"><span class="nav-number">1.2.</span> <span class="nav-text">Run server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Generate-static-files"><span class="nav-number">1.3.</span> <span class="nav-text">Generate static files</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deploy-to-remote-sites"><span class="nav-number">1.4.</span> <span class="nav-text">Deploy to remote sites</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%87%E8%83%BD%E5%BC%95%E7%94%A8%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="nav-number">2.</span> <span class="nav-text">万能引用的场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%87%E8%83%BD%E5%BC%95%E7%94%A8%E7%9A%84%E6%9D%A1%E4%BB%B6"><span class="nav-number">3.</span> <span class="nav-text">万能引用的条件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E8%AF%B4%E4%B8%80%E7%82%B9"><span class="nav-number">3.1.</span> <span class="nav-text">多说一点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%87%E8%83%BD%E5%BC%95%E7%94%A8%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">万能引用的作用</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -314,7 +335,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
