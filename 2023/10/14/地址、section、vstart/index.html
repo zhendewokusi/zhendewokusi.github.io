@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhendewokusi.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":40,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn","display":"always"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言我在学习汇编的时候，对于vstart的概念其实很模糊，感觉会又感觉不是很会，要说哪儿不会有说不出来，就很难受。vstart是section中的概念，但是要讲清楚什么是section，就必须说说什么是地址了。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="地址、section、vstart">
+<meta property="og:url" content="http://zhendewokusi.github.io/2023/10/14/%E5%9C%B0%E5%9D%80%E3%80%81section%E3%80%81vstart/index.html">
+<meta property="og:site_name" content="元芳你怎么看">
+<meta property="og:description" content="前言我在学习汇编的时候，对于vstart的概念其实很模糊，感觉会又感觉不是很会，要说哪儿不会有说不出来，就很难受。vstart是section中的概念，但是要讲清楚什么是section，就必须说说什么是地址了。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-10-14T06:55:49.000Z">
+<meta property="article:modified_time" content="2023-10-14T09:24:25.928Z">
+<meta property="article:author" content="zhendewokusi">
+<meta property="article:tag" content="x86汇编">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://zhendewokusi.github.io/2023/10/14/%E5%9C%B0%E5%9D%80%E3%80%81section%E3%80%81vstart/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>地址、section、vstart | 元芳你怎么看</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">元芳你怎么看</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">匀速乃极速</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/zhendewokusi" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/14/%E5%9C%B0%E5%9D%80%E3%80%81section%E3%80%81vstart/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhendewokusi">
+      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="元芳你怎么看">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          地址、section、vstart
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2023-10-14 14:55:49 / 修改时间：17:24:25" itemprop="dateCreated datePublished" datetime="2023-10-14T14:55:49+08:00">2023-10-14</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>我在学习汇编的时候，对于<code>vstart</code>的概念其实很模糊，感觉会又感觉不是很会，要说哪儿不会有说不出来，就很难受。<code>vstart</code>是<code>section</code>中的概念，但是要讲清楚什么是<code>section</code>，就必须说说什么是地址了。</p>
+<span id="more"></span>
+
+<h3 id="地址"><a href="#地址" class="headerlink" title="地址"></a>地址</h3><h4 id="地址的概念"><a href="#地址的概念" class="headerlink" title="地址的概念"></a>地址的概念</h4><p>计算机里面只有0和1,地址当然就是一串数字，这串数字用来描述各种符号在源程序中的位置。地址细分又能分为：物理地址、虚拟地址布拉布拉的，这里不做深究。</p>
+<p>在汇编中，由于指令和变量占据的内存大小不一样，总不能想怎么来就怎么来，那么就得有一套统一的规则来分配。程序中各种数据结构的访问，本质上是通过“该数据结构的起始地址 + 该数据结构在该硬件平台规定的变量所占据的内存大小”来实现的。这里也就解释了，为什么<code>C语言</code>等高级语言中为什么要定义变量的类型，因为这样才能正确的分配和访问变量占据的内存。</p>
+<p>那么这里的起始地址是如何得到的呢？编译器在做这件事情的时候，占据第一位的数据的地址便是整个程序的起始地址，后面的数据都是在它基础上的偏移。第n个数据所在的位置就是：第n-1个数据的偏移 + 数据 n-1 的内存空间，这就是所谓的<strong>偏移量</strong>，每个变量的地址都是前一个变量的地址 + 前一个变量的内存空间大小。</p>
+<h4 id="简单例子"><a href="#简单例子" class="headerlink" title="简单例子"></a>简单例子</h4><p>来看个简单例子：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">  mov ax,$$</span><br><span class="line">  mov ds,ax</span><br><span class="line">  mov ax,[var]</span><br><span class="line">  label : mov ax,$</span><br><span class="line">  jmp label</span><br><span class="line">  var dw 0x99</span><br><span class="line">  infi: jmp near infi                 ;无限循环</span><br><span class="line"></span><br><span class="line">times (510-($-$$)) db 0               ;主引导程序512字节，空余的使用0填充</span><br><span class="line">          db 0x55,0xaa                ;结束标志               </span><br></pre></td></tr></table></figure>
+<p>下面将其放在bochs中进行调试的输出信息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&lt;bochs:1&gt; b 0x07c00</span><br><span class="line">&lt;bochs:2&gt; c</span><br><span class="line">(0) Breakpoint 1, 0x00007c00 in ?? ()</span><br><span class="line">Next at t=17178863</span><br><span class="line">(0) [0x000000007c00] 0000:7c00 (unk. ctxt): mov ax, 0x0000            ; b80000</span><br><span class="line">&lt;bochs:3&gt; n</span><br><span class="line">Next at t=17178864</span><br><span class="line">(0) [0x000000007c03] 0000:7c03 (unk. ctxt): mov ds, ax                ; 8ed8</span><br><span class="line">&lt;bochs:4&gt; </span><br><span class="line">Next at t=17178865</span><br><span class="line">(0) [0x000000007c05] 0000:7c05 (unk. ctxt): mov ax, word ptr ds:0x000d ; a10d00</span><br><span class="line">&lt;bochs:5&gt; </span><br><span class="line">Next at t=17178866</span><br><span class="line">(0) [0x000000007c08] 0000:7c08 (unk. ctxt): mov ax, 0x0008            ; b80800</span><br><span class="line">&lt;bochs:6&gt; </span><br><span class="line">Next at t=17178867</span><br><span class="line">(0) [0x000000007c0b] 0000:7c0b (unk. ctxt): jmp .-5  (0x00007c08)     ; ebfb</span><br><span class="line">&lt;bochs:7&gt; </span><br><span class="line">Next at t=17178868</span><br><span class="line">(0) [0x000000007c08] 0000:7c08 (unk. ctxt): mov ax, 0x0008            ; b80800</span><br><span class="line">&lt;bochs:8&gt; </span><br><span class="line">Next at t=17178869</span><br><span class="line">(0) [0x000000007c0b] 0000:7c0b (unk. ctxt): jmp .-5  (0x00007c08)     ; ebfb</span><br></pre></td></tr></table></figure>
+<p>可以看到第一行的mov指令，<code>$$</code>被替换成了<code>0</code>。默认情况下如果程序没有定义<code>section</code>就将所有的文件当作一个大的<code>section</code>，因此此时<code>$$</code>为<code>0</code>。</p>
+<p>第三行引用了<code>var</code>变量的值，而<code>[]</code>是去所在地址的内容。<code>mov ax, word ptr ds:0x000d ;</code>就是表明要将一个16位的数据从内存地址 <code>0x000d</code> 处加载到寄存器 <code>AX</code> 中。至于为什么是<code>0x000d</code>后面会解释。</p>
+<p>第四行用了一个<code>$</code>标号，代表当前指令所在的地址。</p>
+<p>最后一行就是一个数据的定义，没什么好讲的。</p>
+<p>还记得上面讲的地址的计算吗？看调试第一行的左侧的地址<code>0x000000007c00</code>和第二行地址<code>0x000000007c03</code>，这两个之间相差3,而第一个指令转换成机器码是<code>b80000</code>刚好三个字节。有没有理解计算机的地址了？再依次往下算，刚好<code>var dw 0x99</code>的地址就是<code>0x000000007c0b</code> + 对应的机器码<code>ebfb</code>的长度，也就是<code>0x000000007c0d</code>，就将这个结果<code>0x000000007c0d - 0x000000007c00</code> 后得到的偏移量是不是 <code>0x000d</code>，也就是变量<code>var</code>的地址。</p>
+<h3 id="section"><a href="#section" class="headerlink" title="section"></a>section</h3><p>我刚开始对<code>section</code>感觉就是在似懂非懂，这个东西称为节。编译器提供的这个关键字只是给程序员用的，处理器根本不知道有这么个东西，你会想：既然CPU又不知道这么个东西，我用不用<code>section</code>都行吧。是这样的，但是最好使用，因为<code>section</code>的功能类似与函数，人为的将代码划分为不同的部分，都是为了代码结构清晰，易于维护。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">SECTION code</span><br><span class="line">    mov ax,$$</span><br><span class="line">    mov ax,section.data.start</span><br><span class="line">    mov ax,section.code.start</span><br><span class="line">    mov ax,[var1]</span><br><span class="line">    label: jmp label</span><br><span class="line"></span><br><span class="line">    infi: jmp near infi                 ;无限循环</span><br><span class="line"> </span><br><span class="line">  times (510-($-$$)) db 0</span><br><span class="line">            db 0x55,0xaa</span><br><span class="line"></span><br><span class="line">SECTION data</span><br><span class="line">    var1 dd 0x4</span><br></pre></td></tr></table></figure>
+<p>下面将其放在bochs中进行调试的输出信息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">(0) [0x0000fffffff0] f000:fff0 (unk. ctxt): jmpf 0xf000:e05b          ; ea5be000f0</span><br><span class="line">&lt;bochs:1&gt; b 0x07c00</span><br><span class="line">&lt;bochs:2&gt; c</span><br><span class="line">(0) Breakpoint 1, 0x00007c00 in ?? ()</span><br><span class="line">Next at t=17178863</span><br><span class="line">(0) [0x000000007c00] 0000:7c00 (unk. ctxt): mov ax, 0x0000            ; b80000</span><br><span class="line">&lt;bochs:3&gt; n</span><br><span class="line">Next at t=17178864</span><br><span class="line">(0) [0x000000007c03] 0000:7c03 (unk. ctxt): mov ax, 0x0200            ; b80002</span><br><span class="line">&lt;bochs:4&gt; </span><br><span class="line">Next at t=17178865</span><br><span class="line">(0) [0x000000007c06] 0000:7c06 (unk. ctxt): mov ax, 0x0000            ; b80000</span><br><span class="line">&lt;bochs:5&gt; </span><br><span class="line">Next at t=17178866</span><br><span class="line">(0) [0x000000007c09] 0000:7c09 (unk. ctxt): mov ax, word ptr ds:0x0200 ; a10002</span><br><span class="line">&lt;bochs:6&gt; </span><br><span class="line">Next at t=17178867</span><br><span class="line">(0) [0x000000007c0c] 0000:7c0c (unk. ctxt): jmp .-2  (0x00007c0c)     ; ebfe</span><br><span class="line">&lt;bochs:7&gt; </span><br><span class="line">Next at t=17178868</span><br><span class="line">(0) [0x000000007c0c] 0000:7c0c (unk. ctxt): jmp .-2  (0x00007c0c)     ; ebfe</span><br></pre></td></tr></table></figure>
+
+<p>在调试信息中我们注意到：</p>
+<ul>
+<li><p><code>SECTION code</code> 和 <code>SECTION data</code> 一个字节的机器码都没有产生，也印证了前面说的处理器并不知道有<code>SECTION</code>的存在。</p>
+</li>
+<li><p><code>section.data.start</code>实际上就是本文件中名为<code>data</code>的<code>section</code>的真实偏移。这个或许看不出来，可以看<code>mov ax,section.code.start</code>的偏移，也就是调试信息中的<code>0000:7c06 (unk. ctxt): mov ax, 0x0000</code>，可以看到<code>code</code>的偏移量为0，符合我们的预期。</p>
+</li>
+</ul>
+<h3 id="vstart"><a href="#vstart" class="headerlink" title="vstart"></a>vstart</h3><p>根据nasm官方手册的解释：<code>section</code>使用<code>vstart</code>修饰后，就可以被赋予一个虚拟起始地址<code>virtual start address</code>。而<code>org</code>和<code>vstart</code>实际上是同一功能，我就只展示其中一个，另外一个原理相同。</p>
+<p>特别需要注意的是：<code>vstart</code>和<code>org</code>都不会让程序加载到地址xxx。它们做的只是告诉编译器将这个节之后的数据、指令的地址按照xxx为起始，就这么个功能。而加载是加载器的功能，编译器没这本事。</p>
+<p>光听概念太枯燥，还是来看个代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">SECTION code vstart=0x7c00</span><br><span class="line">    mov ax,$$</span><br><span class="line">    mov ax,section.data.start</span><br><span class="line">    mov ax,section.code.start</span><br><span class="line">    mov ax,[var1]</span><br><span class="line">    label: jmp label</span><br><span class="line"></span><br><span class="line">    infi: jmp near infi                 ;无限循环</span><br><span class="line"> </span><br><span class="line">  times (510-($-$$)) db 0</span><br><span class="line">            db 0x55,0xaa</span><br><span class="line"></span><br><span class="line">SECTION data </span><br><span class="line">    var1 dd 0x4</span><br></pre></td></tr></table></figure>
+<p>下面将其放在bochs中进行调试的输出信息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">(0) [0x0000fffffff0] f000:fff0 (unk. ctxt): jmpf 0xf000:e05b          ; ea5be000f0</span><br><span class="line">&lt;bochs:1&gt; b 0x07c00</span><br><span class="line">&lt;bochs:2&gt; c</span><br><span class="line">(0) Breakpoint 1, 0x00007c00 in ?? ()</span><br><span class="line">Next at t=17178863</span><br><span class="line">(0) [0x000000007c00] 0000:7c00 (unk. ctxt): mov ax, 0x7c00            ; b8007c</span><br><span class="line">&lt;bochs:3&gt; n</span><br><span class="line">Next at t=17178864</span><br><span class="line">(0) [0x000000007c03] 0000:7c03 (unk. ctxt): mov ax, 0x0200            ; b80002</span><br><span class="line">&lt;bochs:4&gt; </span><br><span class="line">Next at t=17178865</span><br><span class="line">(0) [0x000000007c06] 0000:7c06 (unk. ctxt): mov ax, 0x0000            ; b80000</span><br><span class="line">&lt;bochs:5&gt; </span><br><span class="line">Next at t=17178866</span><br><span class="line">(0) [0x000000007c09] 0000:7c09 (unk. ctxt): mov ax, word ptr ds:0x0900 ; a10009</span><br><span class="line">&lt;bochs:6&gt; </span><br><span class="line">Next at t=17178867</span><br><span class="line">(0) [0x000000007c0c] 0000:7c0c (unk. ctxt): jmp .-2  (0x00007c0c)     ; ebfe</span><br><span class="line">&lt;bochs:7&gt; </span><br><span class="line">Next at t=17178868</span><br><span class="line">(0) [0x000000007c0c] 0000:7c0c (unk. ctxt): jmp .-2  (0x00007c0c)     ; ebfe</span><br></pre></td></tr></table></figure>
+
+<p>可以看到<code>code</code>加了<code>vstart</code>后，<code>$$</code>从<code>0</code>变成<code>0x7c00</code>。所以该节中的数据地址从<code>0x7c00</code>为起始编址。这个是虚拟的地址，因为这个程序整个才512字节，根本到不了偏移量为<code>0x7c00</code>。<code>$$</code>以该节的虚拟起始地址为主，如果这个节没有<code>vstart</code>来指定起始地址，就输出在文件中偏移地址。而此时的<code>$</code>就是 当前的新的地址 + 偏移。 </p>
+<p><code>section.data.start</code>实际上就是本文件中名为<code>data</code>的<code>section</code>的真实偏移，没有因为<code>vstart</code>改变。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/x86%E6%B1%87%E7%BC%96/" rel="tag"># x86汇编</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/12/%E6%9D%A1%E6%AC%BE25/" rel="prev" title="条款25:针对右值引用实施std::move，针对万能引用实施std::forward">
+      <i class="fa fa-chevron-left"></i> 条款25:针对右值引用实施std::move，针对万能引用实施std::forward
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80"><span class="nav-number">2.</span> <span class="nav-text">地址</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80%E7%9A%84%E6%A6%82%E5%BF%B5"><span class="nav-number">2.1.</span> <span class="nav-text">地址的概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E4%BE%8B%E5%AD%90"><span class="nav-number">2.2.</span> <span class="nav-text">简单例子</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#section"><span class="nav-number">3.</span> <span class="nav-text">section</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#vstart"><span class="nav-number">4.</span> <span class="nav-text">vstart</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zhendewokusi"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zhendewokusi</p>
+  <div class="site-description" itemprop="description">本网站主要用于记录我个人学习的内容,希望对你有所帮助</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zhendewokusi" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zhendewokusi" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:768672249@qq.com" title="E-Mail → mailto:768672249@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhendewokusi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/pangu@4/dist/browser/pangu.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+  <script async src="/js/love.min.js"></script>
+
+    </div>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/wanko.model.json"},"display":{"position":"left","width":100,"height":200},"mobile":{"show":false},"log":false});</script></body>
+</html>
