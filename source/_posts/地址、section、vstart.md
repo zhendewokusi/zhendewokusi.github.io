@@ -23,7 +23,7 @@ tags: [x86汇编]
 #### 简单例子
 
 来看个简单例子：
-```assembly
+```asm
      mov ax,$$
      mov ds,ax
      mov ax,[var]
@@ -75,7 +75,7 @@ Next at t=17178869
 
 我刚开始对`section`感觉就是在似懂非懂，这个东西称为节。编译器提供的这个关键字只是给程序员用的，处理器根本不知道有这么个东西，你会想：既然CPU又不知道这么个东西，我用不用`section`都行吧。是这样的，但是最好使用，因为`section`的功能类似与函数，人为的将代码划分为不同的部分，都是为了代码结构清晰，易于维护。
 
-```assembly
+```asm
 SECTION code
     mov ax,$$
     mov ax,section.data.start
@@ -130,7 +130,7 @@ Next at t=17178868
 特别需要注意的是：`vstart`和`org`都不会让程序加载到地址xxx。它们做的只是告诉编译器将这个节之后的数据、指令的地址按照xxx为起始，就这么个功能。而加载是加载器的功能，编译器没这本事。
 
 光听概念太枯燥，还是来看个代码：
-```assembly
+```asm
 SECTION code vstart=0x7c00
     mov ax,$$
     mov ax,section.data.start
