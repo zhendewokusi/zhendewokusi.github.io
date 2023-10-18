@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhendewokusi.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":40,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn","display":"always"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="用户程序头部我们知道编译器编译的用户程序和加载器实际上是在不同时间、不同地方、不同的人开发的。因此，双方都不了解对象的结构和功能，此时就需要一个结构来传达必要的信息。在看下面的文章时候最好能完全掌握地址、section、vstart的内容。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="加载程序（器）的工作流程">
+<meta property="og:url" content="http://zhendewokusi.github.io/2023/10/14/%E5%8A%A0%E8%BD%BD%E7%A8%8B%E5%BA%8F%EF%BC%88%E5%99%A8%EF%BC%89%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="元芳你怎么看">
+<meta property="og:description" content="用户程序头部我们知道编译器编译的用户程序和加载器实际上是在不同时间、不同地方、不同的人开发的。因此，双方都不了解对象的结构和功能，此时就需要一个结构来传达必要的信息。在看下面的文章时候最好能完全掌握地址、section、vstart的内容。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-10-14T10:07:34.000Z">
+<meta property="article:modified_time" content="2023-10-18T14:44:28.551Z">
+<meta property="article:author" content="zhendewokusi">
+<meta property="article:tag" content="x86汇编">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://zhendewokusi.github.io/2023/10/14/%E5%8A%A0%E8%BD%BD%E7%A8%8B%E5%BA%8F%EF%BC%88%E5%99%A8%EF%BC%89%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>加载程序（器）的工作流程 | 元芳你怎么看</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">元芳你怎么看</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">匀速乃极速</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/zhendewokusi" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/14/%E5%8A%A0%E8%BD%BD%E7%A8%8B%E5%BA%8F%EF%BC%88%E5%99%A8%EF%BC%89%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhendewokusi">
+      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="元芳你怎么看">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          加载程序（器）的工作流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-10-14 18:07:34" itemprop="dateCreated datePublished" datetime="2023-10-14T18:07:34+08:00">2023-10-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-10-18 22:44:28" itemprop="dateModified" datetime="2023-10-18T22:44:28+08:00">2023-10-18</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="用户程序头部"><a href="#用户程序头部" class="headerlink" title="用户程序头部"></a>用户程序头部</h3><p>我们知道编译器编译的用户程序和加载器实际上是在不同时间、不同地方、不同的人开发的。因此，双方都不了解对象的结构和功能，此时就需要一个结构来传达必要的信息。在看下面的文章时候最好能完全掌握<a href="https://zhendewokusi.github.io/2023/10/14/%E5%9C%B0%E5%9D%80%E3%80%81section%E3%80%81vstart/#more">地址、section、vstart</a>的内容。</p>
+<span id="more"></span>
+
+<p>加载器必须了解一些如何加载用户程序的必要信息。这通常是加载器的编写者和用户程序的编写者互相协商决定的。经验表明，把这个约定的地方放在用户程序的开头，对双方，特别是加载器来说比较方便，这就是用户程序头部。</p>
+<p>而用户程序头部是一个段，且是第一个被定义的段，且总是位于整个源程序的开头。</p>
+<h4 id="用户程序头部必须包含的信息"><a href="#用户程序头部必须包含的信息" class="headerlink" title="用户程序头部必须包含的信息"></a>用户程序头部必须包含的信息</h4><ol>
+<li><p>用户程序的尺寸（单位是字节）。加载器需要根据尺寸来决定读取多少个逻辑扇区。</p>
+</li>
+<li><p>用户程序的入口点，包含段地址和偏移地址。加载器并不清楚用户程序的分段情况，更不知道第一条要执行的指令在用户程序中的哪个位置。因此，必须在头部中包含第一条指令的段地址和偏移地址，也就是用户程序的入口点。你可能会想，那你上一篇文章也没有这样做呀。甚至没有用户程序头部。是这样的，很多程序可能会有多个代码段，因此需要明确指出用户程序刚开始运行的地址，我的上一篇的例子还是过于理想化了。</p>
+</li>
+<li><p>段重定位表。还是刚刚说的，一个程序可能会有多个代码段和数据段。这些段如何用归用户程序管，但是程序加载在内存中时地址需要重新确定。</p>
+</li>
+</ol>
+<p>实际上的用户程序头部还包含：校验和信息、外部依赖项、内存布局、硬件要求等等。</p>
+<h4 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h4><p>该例子是&lt;&lt;x86汇编 从实模式到保护模式&gt;&gt;中第八章的示例代码。如果需要更多代码，可以<a target="_blank" rel="noopener" href="https://github.com/zhendewokusi/codeOfAssembly.git">查看</a>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">SECTION header vstart=0                     ;定义用户程序头部段 </span><br><span class="line">    program_length  dd program_end          ;程序总长度[0x00]</span><br><span class="line">    </span><br><span class="line">    ;用户程序入口点</span><br><span class="line">    code_entry      dw start                ;偏移地址[0x04]</span><br><span class="line">                    dd section.code_1.start ;段地址[0x06] </span><br><span class="line">    </span><br><span class="line">    realloc_tbl_len dw (header_end-code_1_segment)/4</span><br><span class="line">                                            ;段重定位表项个数[0x0a]</span><br><span class="line">    </span><br><span class="line">    ;段重定位表           </span><br><span class="line">    code_1_segment  dd section.code_1.start ;[0x0c]</span><br><span class="line">    code_2_segment  dd section.code_2.start ;[0x10]</span><br><span class="line">    data_1_segment  dd section.data_1.start ;[0x14]</span><br><span class="line">    data_2_segment  dd section.data_2.start ;[0x18]</span><br><span class="line">    stack_segment   dd section.stack.start  ;[0x1c]</span><br><span class="line">    </span><br><span class="line">    header_end:                </span><br><span class="line">    </span><br></pre></td></tr></table></figure>
+<h3 id="加载器的工作流程"><a href="#加载器的工作流程" class="headerlink" title="加载器的工作流程"></a>加载器的工作流程</h3><h4 id="初始化和决定加载位置"><a href="#初始化和决定加载位置" class="headerlink" title="初始化和决定加载位置"></a>初始化和决定加载位置</h4><p>加载器要加载一个用户程序，需要做两件事情：内存哪儿是空闲的（从哪个物理内存地址开始加载用户程序），用户程序在硬盘哪儿呢？起始逻辑扇区号是什么？</p>
+<p>我们来看一看<a target="_blank" rel="noopener" href="https://github.com/zhendewokusi/codeOfAssembly/blob/master/booktool/c08/c08_mbr.asm"><strong>mbr</strong></a>的具体细节。来看第六行：<code>app_lba_start equ 100</code>。这里的<code>app_lba_start</code>就是指的就是用户程序起始逻辑扇区号号。你可能会想，我为啥要多此一举，直接传立即数不好吗？有编程语言素养的人一定会理解我说的：程序中尽可能避免 <code>magic number</code> ,它的不好之处我也就不赘述。使用<code>equal</code>也不会占用任何汇编地址，也不会再运行的时候占用任何内存位置。</p>
+<p>加载用户程序需要一个确定的内存物理地址，<code>phy_base dd 0x10000</code>示例代码将其初始化为0x10000，你当然可以改成其他地址，只要它是空闲的，且必须16字节对齐。一般情况下，加载器及其栈的地址范围在0xA0000以上，在BIOS和外围设备的范围。</p>
+<h4 id="准备加载用户程序"><a href="#准备加载用户程序" class="headerlink" title="准备加载用户程序"></a>准备加载用户程序</h4><p>我们将主引导扇区程序定义为一个段。比如示例代码中：<code>SECTION mbr align=16 vstart=0x7c00</code>,这句话是必要的，因为需要设置<code>vstart</code>。</p>
+<p>由于<code>phy_base</code>是一个32位的数，且是低端序列存放的，要先通过物理起始地址计算用于加载用户程序的逻辑段地址，所以是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">    mov ax,[cs:phy_base] </span><br><span class="line">    mov dx,[cs:phy_base+0x02]</span><br><span class="line">    mov bx,16        </span><br><span class="line">    div bx            </span><br><span class="line">    mov ds,ax    致高位，低地址存低位，且`phy_base`中是`0x10000`，则这两条指令过后:AX寄存器的数值是`0x00`，DX寄存器中是`0X01`。</span><br><span class="line">之后将物理地址变成16位的段地址，并且传送给`DS`和`ES`寄存器。因为前面提到过的，它必须16字节对齐，因此直接将物理地址右移4位就好了。`AX`中存储的是除的商，余数为0没有意义。</span><br><span class="line"></span><br><span class="line">#### 外围设备及其接口</span><br><span class="line"></span><br><span class="line">接下来加载器就需要访问其他的硬件（eg:硬盘、鼠标、键盘）。因为和计算机主机连接的设备都需要和处理器打交道，就需要一种机制来统一。这里的外接设备都叫做**外围设备**。外围设备分为两种，一种是输入设备，比如键盘、鼠标；另一种是输出设备，比如显示器、打印机。</span><br><span class="line"></span><br><span class="line">而每种设备的工作方式是不一样的。比如扬声器需要的是模拟信号；键盘传输的是**ASCII码**。不同设备传输的信号不一样，插头插孔都不一样、连线的数量也不一样。所以就有了*信号转换器*和*变速齿轮*，这就是**I/O接口**。比如：麦克风，扬声器的I/O接口叫做**声卡**；显示器的I/O接口叫做**显卡**；鼠标、键盘、U盘的I/O接口叫做**USB接口**。看的出来，不同设备的I/O接口不同。</span><br><span class="line"></span><br><span class="line">**I/O接口**可以是电路板，可以是芯片，但是它的本质就是一个变换器。将处理器的信号转换成外围设备能看懂的信号，以及将外围设备的信号转换成处理器能理解的信号。</span><br><span class="line"></span><br><span class="line">问题也随之而来：</span><br><span class="line">- 总不能所有的I/O设备都和处理器相连，如果这样做了，那扩展性也基本上无，该如何解决？</span><br><span class="line">- 每个I/O设备都抢着和处理器信息处理，没有一个合理的机制，一定会发生冲突，这个机制该如何实现？</span><br><span class="line"></span><br><span class="line">第一个问题的解决方法：两者之间加一个中间层，也就是**总线**。比如：USB总线。总线连接所有的外围设备和处理器，且每个连接到总线上的器件**必须**有**电子开关**，这样才能随时和加入和断开。</span><br><span class="line"></span><br><span class="line">第二个问题的解决方法：使用输入输出控制设备集中器（ICH）芯片。它的作用就是连接不同的总线，并且I/O设备对处理器访问的协调工作，也就是南桥。比如ICH连接USB总线、IDE/SATA总线、PCI/PCIE总线（扩展）。而且每个I/O接口可能连接不止一个设备，比如USB接口连接鼠标、键盘、U盘。因为同类型设备不唯一的缘故，它们内部也有线路服用和仲裁的总线体系，叫做通信总线或者设备总线。当处理器想和某个设备交流，ICH就会让其他无关设备闭嘴。</span><br><span class="line"></span><br><span class="line">#### I/O端口和端口访问</span><br><span class="line"></span><br><span class="line">在上面*外围设备及其接口*的基础上来具体说说外围设备和处理器交流之间的细节。</span><br><span class="line"></span><br><span class="line">处理器是通过**端口**来和外围设备打交道的。而端口本质上就是一些处于I/O接口电路中的寄存器。每一个I/O接口都可能有好几个端口，分别用于不同的目的。比如用来连接硬盘的*PATA/SATA*接口就有好几个端口，比如命令端口、状态端口、参数端口和数据端口。由于其本质上是寄存器，因此和处理器内的寄存器类似，都有其对应的数据宽度。比如8位、16位，这是设备和I/O接口制造者之间的协议。</span><br><span class="line"></span><br><span class="line">端口在不同的计算机系统中的实现方式是不同的，比如有些时将其端口号映射到内存地址中（0xE0001 ~ 0x FFFFF），访问这些内存实际上就是在访问对应的I/O接口；也有部分计算机系统是将端口独立编制的，和内存不发生关系。本文只有独立编制的方式。</span><br><span class="line"></span><br><span class="line">所有的端口都是进行统一的编号的，比如：0x0001、0x0002。每个I/O接口电路都会分配多个端口。在Intel系统中，只允许65536个端口存在，端口号范围：0 ~ 65535。由于是进行独立编制的，就不能使用`mov`指令，取而代之的是`in`和`out`指令。</span><br><span class="line"></span><br><span class="line">`in`指令是从端口进行读：</span><br><span class="line">```asm</span><br><span class="line">    in al,dx    ;访问8位端口</span><br><span class="line">    in ax,dx    ;访问16位端口</span><br><span class="line">    in al,0xf0  ;访问0xf0端口</span><br></pre></td></tr></table></figure>
+<ol>
+<li>目的操作数必须是寄存器<code>AL</code>或者<code>AX</code>。原操作数应该为寄存器<code>DX</code>。</li>
+<li><code>in</code>指令不允许使用内存单元当做操作数。</li>
+<li>虽然可以使用立即数来指定端口，但是只允许一个字节，不能大于255的端口号。</li>
+<li>它并没有影响任何的标志位。</li>
+</ol>
+<p><code>out</code>指令和<code>in</code>功能相反，因此要求也就是:目的操作数为寄存器<code>DX</code>或者8位立即数。源操作数必须是寄存器<code>AL</code>或者<code>AX</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">out 0x37,al     ;8位端口</span><br><span class="line">out 0xf5,ax     ;16位端口</span><br><span class="line">out dx,al       ;8位端口，端口号在DX中</span><br><span class="line">out dx,ax       ;16位端口，端口号在DX中</span><br></pre></td></tr></table></figure>
+
+<h4 id="通过硬盘控制端口读扇区数据"><a href="#通过硬盘控制端口读扇区数据" class="headerlink" title="通过硬盘控制端口读扇区数据"></a>通过硬盘控制端口读扇区数据</h4><p>我们都知道硬盘读写的基本单位是扇区。每次至少操作一个扇区，不可能仅仅读写一个扇区中的几个字节。者也就是为什么硬盘是典型的块设备，因为数据交换是块。</p>
+<h5 id="CHS模式"><a href="#CHS模式" class="headerlink" title="CHS模式"></a>CHS模式</h5><p>回忆一下计算机基础知识，硬盘读写数据都要什么？磁头号、柱面号、扇区号，这就是<code>CHS</code>模式。<br>比如我们可以使用<code>bximage</code>来查看我们创建的<code>*.img</code>文件的信息。其中</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">➜  c07 git:(master) ✗ bximage</span><br><span class="line">========================================================================</span><br><span class="line">                                bximage</span><br><span class="line">  Disk Image Creation / Conversion / Resize and Commit Tool for Bochs</span><br><span class="line">         $Id: bximage.cc 14091 2021-01-30 17:37:42Z sshwarts $</span><br><span class="line">========================================================================</span><br><span class="line"></span><br><span class="line">1. Create new floppy or hard disk image</span><br><span class="line">2. Convert hard disk image to other format (mode)</span><br><span class="line">3. Resize hard disk image</span><br><span class="line">4. Commit &#x27;undoable&#x27; redolog to base image</span><br><span class="line">5. Disk image info</span><br><span class="line"></span><br><span class="line">0. Quit</span><br><span class="line"></span><br><span class="line">Please choose one [0] 5</span><br><span class="line"></span><br><span class="line">Disk image info</span><br><span class="line"></span><br><span class="line">What is the name of the image?</span><br><span class="line">[c.img] c07_mbr.img</span><br><span class="line"></span><br><span class="line">disk image mode = &#x27;flat&#x27;</span><br><span class="line">hd_size: 104767488</span><br><span class="line">geometry = 203/16/63 (99 MB)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>只用看最后一行的<code>geometry = 203/16/63</code>，它的C（磁头号）就是<code>203</code>,H（柱面号）就是<code>16</code>,S（扇区号）就是<code>63</code>。最早的逻辑扇区编制方法是：<code>LBA28</code>。使用28个比特来表示逻辑扇区号。逻辑扇区一共有2^28个扇区，每个扇区有<code>512</code>字节，一共可管理128G。个人计算机上的主硬盘控制器被分配了8位端口，端口号从0x1f0到0x1f7。</p>
+<h5 id="读逻辑扇区，具体过程"><a href="#读逻辑扇区，具体过程" class="headerlink" title="读逻辑扇区，具体过程"></a>读逻辑扇区，具体过程</h5><p>假设要从硬盘上读逻辑扇区，具体过程如下：</p>
+<ol>
+<li>设置需要读取的扇区数量，这个数值要写入 <code>0x1f2</code> 端口。这是个8位的端口，因此每次只能读写255个扇区，如果写入的值是0,表示读取 256 个扇区。</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov dx,0x1f2</span><br><span class="line">mov al,0x01</span><br><span class="line">out dx,al</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>设置其实LBA扇区号。因为扇区的读写是连续的，而<code>LBA28</code>位的编号有足足28位，8086需要将其分割成4段，从低到高分别写入端口<code>0x1f3</code>、<code>0x1f4</code>、<code>0x1f5</code>和<code>0x1f6</code>。</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">mov dx,0x1f2</span><br><span class="line">mov al,1</span><br><span class="line">out dx,al                       ;读取的扇区数</span><br><span class="line"></span><br><span class="line">inc dx                          ;0x1f3</span><br><span class="line">mov ax,si</span><br><span class="line">out dx,al                       ;LBA地址7~0</span><br><span class="line"></span><br><span class="line">inc dx                          ;0x1f4</span><br><span class="line">mov al,ah</span><br><span class="line">out dx,al                       ;LBA地址15~8</span><br><span class="line"></span><br><span class="line">inc dx                          ;0x1f5</span><br><span class="line">mov ax,di</span><br><span class="line">out dx,al                       ;LBA地址23~16</span><br><span class="line"></span><br><span class="line">inc dx                          ;0x1f6</span><br><span class="line">mov al,0xe0                     ;LBA28模式，主盘</span><br><span class="line">or al,ah                        ;LBA地址27~24</span><br><span class="line">out dx,al</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>向端口<code>0x1f7</code>写入<code>0x20</code>，请求硬盘读，也是8位端口。</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">inc dx                          ;0x1f7</span><br><span class="line">mov al,0x20                     ;读命令</span><br><span class="line">out dx,al</span><br></pre></td></tr></table></figure>
+
+
+<ol start="4">
+<li>等待读写操作完成。 向端口<code>0x1f7</code>发送读写命令后，<code>0x1f7</code>端口的第7个标志位为”1”表示正在工作，第3个标志位为”1”表示准备好发送或者接收数据。</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">.waits:</span><br><span class="line">       in al,dx</span><br><span class="line">       and al,0x88</span><br><span class="line">       cmp al,0x08</span><br><span class="line">       jnz .waits                      ;不忙，且硬盘已准备好数据传输 </span><br></pre></td></tr></table></figure>
+<p>不是上面刚说了不要有<code>magic number</code>嘛？这里的<code>0x88</code>和<code>0x08</code>是什么鬼？先看<code>add al,0x88</code>因为<code>0x88</code>的二进制形式是<code>1000 1000</code>。第7位和第3位为1,有没有反应过来？又因为是<code>and</code>，这条指令实质上是保留寄存器<code>AL</code>中的第7位和第3位。如果寄存器<code>AL</code>中为<code>00001000</code>就说明是推出等待状态，可以继续往下操作了。</p>
+<ol start="5">
+<li>接下来就要连续取出数据。<code>0x1f0</code>是硬盘接口的数据接口，是一个16位端口。一旦硬盘控制器空闲，且准备就绪，就可以连续从该<strong>端口写入或者读取数据</strong>。下面代码举了个例子，从硬盘中读取一个扇区，将其存放到段寄存器<strong>DS</strong>指定的数据段，偏移量由寄存器<code>BX</code>指定：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">       mov cx,256                      ;总共要读取的字节数</span><br><span class="line">       mov dx,0x1f0                    ;数据接口</span><br><span class="line">.readw:</span><br><span class="line">       in ax,dx</span><br><span class="line">       mov [bx],ax</span><br><span class="line">       add bx,2</span><br><span class="line">       loop .readw</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>你如果看的仔细，就会发现：那么<code>0x1f1</code>端口是干嘛的？其实<code>0x1f1</code>是错误寄存器，包含了硬盘驱动器最后一次执行命令后的状态（错误原因）。</p>
+<h3 id="过程调用"><a href="#过程调用" class="headerlink" title="过程调用"></a>过程调用</h3><p>上面这些代码如果每次都要自己来写，那也太折磨人了，尤其是多次读写，不得疯掉。处理器支持一种叫过程调用的指令执行机制，叫做例程。它实质就是一段代码，因为每次进行的操作类似，我们像使用C语言的函数一样的思想。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">read_hard_disk_0:                        ;从硬盘读取一个逻辑扇区</span><br><span class="line">                                         ;输入：DI:SI=起始逻辑扇区号</span><br><span class="line">                                         ;      DS:BX=目标缓冲区地址</span><br><span class="line">         push ax</span><br><span class="line">         push bx</span><br><span class="line">         push cx</span><br><span class="line">         push dx</span><br><span class="line">      </span><br><span class="line">         mov dx,0x1f2</span><br><span class="line">         mov al,1</span><br><span class="line">         out dx,al                       ;读取的扇区数</span><br><span class="line"></span><br><span class="line">         inc dx                          ;0x1f3</span><br><span class="line">         mov ax,si</span><br><span class="line">         out dx,al                       ;LBA地址7~0</span><br><span class="line"></span><br><span class="line">         inc dx                          ;0x1f4</span><br><span class="line">         mov al,ah</span><br><span class="line">         out dx,al                       ;LBA地址15~8</span><br><span class="line"></span><br><span class="line">         inc dx                          ;0x1f5</span><br><span class="line">         mov ax,di</span><br><span class="line">         out dx,al                       ;LBA地址23~16</span><br><span class="line"></span><br><span class="line">         inc dx                          ;0x1f6</span><br><span class="line">         mov al,0xe0                     ;LBA28模式，主盘</span><br><span class="line">         or al,ah                        ;LBA地址27~24</span><br><span class="line">         out dx,al</span><br><span class="line"></span><br><span class="line">         inc dx                          ;0x1f7</span><br><span class="line">         mov al,0x20                     ;读命令</span><br><span class="line">         out dx,al</span><br><span class="line"></span><br><span class="line">  .waits:</span><br><span class="line">         in al,dx</span><br><span class="line">         and al,0x88</span><br><span class="line">         cmp al,0x08</span><br><span class="line">         jnz .waits                      ;不忙，且硬盘已准备好数据传输 </span><br><span class="line"></span><br><span class="line">         mov cx,256                      ;总共要读取的字数</span><br><span class="line">         mov dx,0x1f0</span><br><span class="line">  .readw:</span><br><span class="line">         in ax,dx</span><br><span class="line">         mov [bx],ax</span><br><span class="line">         add bx,2</span><br><span class="line">         loop .readw</span><br><span class="line"></span><br><span class="line">         pop dx</span><br><span class="line">         pop cx</span><br><span class="line">         pop bx</span><br><span class="line">         pop ax</span><br><span class="line">      </span><br><span class="line">         ret</span><br></pre></td></tr></table></figure>
+<p>这里的<code>ret</code>作用也可以类似C语言的函数来理解，进入函数前需要将参数压入栈中，也就是开始的<code>push ax</code>将操作前的寄存器的数值压入栈中。而<code>ret</code>就类似于<code>return</code>，将压入栈中的数值弹出，恢复各个寄存器的数值。这段代码就是我们说的过程。进入该过程时候，需要将<code>SI</code>和<code>DI</code>存入起始逻辑扇区号，<code>SI</code>存入低16位，<code>DI</code>存入高12位。</p>
+<p>那么这个例程我们该如何调用呢？有以下三种调用方式：</p>
+<h4 id="16位相对近调用"><a href="#16位相对近调用" class="headerlink" title="16位相对近调用"></a>16位相对近调用</h4><p>近调用意思是说被调用的目标位于当前的代码段内，所以只需要偏移地址就可以了。</p>
+<p>调用的地址计算：用目标过程的汇编地址减去当前call指令的汇编地址，再减去<code>call</code>指令的字节长度。<br>这里的代码和调试都是从<a target="_blank" rel="noopener" href="https://github.com/zhendewokusi/codeOfAssembly/blob/master/booktool/c08/c08_mbr.asm">c08_mbr.asm</a>得到的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call read_hard_disk_0</span><br></pre></td></tr></table></figure>
+<p>只看我们向看的：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;bochs:14&gt; </span><br><span class="line">Next at t=17178875</span><br><span class="line">(0) [0x000000007c20] 0000:7c20 (unk. ctxt): call .+81  (0x00007c74)   ; e85100</span><br></pre></td></tr></table></figure>
+<p>所以我们可以看出来，这里并不是一个地址，而是一个偏移量。这里需要注意的是如果<strong>调用过程</strong>在当前指令前面，那么相对量是个正数，反之就是负数。再比如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call 0x0500</span><br></pre></td></tr></table></figure>
+<p>这里本质上和上一个一样，绝不是将<code>0x0500</code>出现在机器码中，而是用这个数值减去当前指令的汇编地址来得到一个偏移量。</p>
+<h4 id="16位间接绝对近调用"><a href="#16位间接绝对近调用" class="headerlink" title="16位间接绝对近调用"></a>16位间接绝对近调用</h4><p>这种也是近调用，只能调用当前代码段内的过程，指令中的操作数就不是偏移量了，而是被调用过程的<strong>真实偏移地址</strong>，故成为<strong>绝对地址</strong>。但是！这个偏移地址不是直接出现在指令中，而是由<strong>16位通用寄存器或者16位内存单元</strong>间接给出，比如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">call cx             ;被调用过程的偏移地址位于寄存器CX内，在指令执行时候有处理器从该寄存器中取得</span><br><span class="line">call [0x3000]       ;处理器访问数据段（使用DS）,从偏移地址0x3000处取得一个字作为目标过程的真实偏移地址</span><br><span class="line">call [bx]           ;原理同2</span><br><span class="line">call [bx+si+0x02]   ;原理同2</span><br></pre></td></tr></table></figure>
+
+<h4 id="16位直接绝对远"><a href="#16位直接绝对远" class="headerlink" title="16位直接绝对远"></a>16位直接绝对远</h4><p>这种调用属于段间调用，即调用另一个代码段内的过程，所以被称为远调用。即需要被调用过程所在的段地址，也需要该过程在段内的偏移地址。比如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call 0x2000:0x0030</span><br></pre></td></tr></table></figure>
+<p>当然你想玩个<code>call</code>的被调用过程处于当前代码段内，处理器也会从当前代码段转移到当前代码段。</p>
+<h4 id="16位间接绝对远调用"><a href="#16位间接绝对远调用" class="headerlink" title="16位间接绝对远调用"></a>16位间接绝对远调用</h4><p>这也属于段间调用，被调用过程位于另一个代码段内，而且段地址和偏移地址都是间接给出的，比如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">call far [0x2000]</span><br><span class="line">call far [proc_l]</span><br><span class="line">call far [bx]</span><br><span class="line">call far [bx+si]</span><br></pre></td></tr></table></figure>
+
+<p>间接远调用必须使用关键字<code>far</code>。指令中给出的是偏移地址，而段地址在偏移地址的后面。看下面的例子：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">proc_1 dw 0x0102,0x2000</span><br><span class="line">call far [proc_1]</span><br><span class="line">call far [bx]</span><br><span class="line">call far [bx+si]</span><br></pre></td></tr></table></figure>
+
+<p>当这条指令执行时，处理器访问由段寄存器DS指向的数据段，从指令中指定的偏移地址处取两个字（分别是段地址<code>0x2000</code>和偏移地址<code>0x0102</code>）；然后将代码段寄存器<code>CS</code>和指令指针寄存器<code>IP</code>的当前内容压栈，最后用刚才取得的段地址和偏移地址代替<code>CS</code>和<code>IP</code>的数值。剩下两个也是同理。</p>
+<p>而过程调用完就需要返回，叫做<strong>过程返回</strong>。</p>
+<h4 id="返回指令-ret"><a href="#返回指令-ret" class="headerlink" title="返回指令 ret"></a>返回指令 <code>ret</code></h4><p>当它执行的时候，处理器只做一件事情，就是从栈中弹出来一个字到指令指针寄存器<strong>IP</strong>中。</p>
+<h4 id="返回指令-retf"><a href="#返回指令-retf" class="headerlink" title="返回指令 retf"></a>返回指令 <code>retf</code></h4><p>当它执行的时候，处理器分别从栈中弹出来两个字到指令指针寄存器<code>IP</code>和代码段寄存器<code>CS</code>中。</p>
+<h4 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h4><p>在示例代码中，将<code>AX</code>，<code>BX</code>，<code>CX</code>，<code>DX</code>的数值<code>push</code>进了栈，在过程的最后，就是恢复。反序弹出4个寄存器的数值。此时栈指针回到了进入过程内部时的位置（这很重要！）。</p>
+<h4 id="加载用户程序"><a href="#加载用户程序" class="headerlink" title="加载用户程序"></a>加载用户程序</h4><p>可以看示例代码<a target="_blank" rel="noopener" href="https://github.com/zhendewokusi/codeOfAssembly/blob/master/booktool/c08/c08.asm">c08.asm</a>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">SECTION header vstart=0                     ;定义用户程序头部段 </span><br><span class="line">    program_length  dd program_end          ;程序总长度[0x00]</span><br><span class="line">    </span><br><span class="line">    ;用户程序入口点</span><br><span class="line">    code_entry      dw start                ;偏移地址[0x04]</span><br><span class="line">                    dd section.code_1.start ;段地址[0x06] </span><br><span class="line">    </span><br><span class="line">    realloc_tbl_len dw (header_end-code_1_segment)/4</span><br><span class="line">                                            ;段重定位表项个数[0x0a]</span><br><span class="line">    </span><br><span class="line">    ;段重定位表           </span><br><span class="line">    code_1_segment  dd section.code_1.start ;[0x0c]</span><br><span class="line">    code_2_segment  dd section.code_2.start ;[0x10]</span><br><span class="line">    data_1_segment  dd section.data_1.start ;[0x14]</span><br><span class="line">    data_2_segment  dd section.data_2.start ;[0x18]</span><br><span class="line">    stack_segment   dd section.stack.start  ;[0x1c]</span><br><span class="line">    </span><br><span class="line">    header_end:                </span><br><span class="line">    </span><br></pre></td></tr></table></figure>
+<p>和示例代码<a target="_blank" rel="noopener" href="https://github.com/zhendewokusi/codeOfAssembly/blob/master/booktool/c08/c08_mbr.asm">c08_mbr.asm</a>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mov dx,[2]</span><br><span class="line">mov ax,[0]</span><br><span class="line"></span><br><span class="line">mov bx,512                      ;512字节每扇区</span><br><span class="line">div bx                          ;商存储在AX中，余数存储在DX</span><br><span class="line">cmp dx,0</span><br><span class="line">jnz @1                          ;未除尽，因此结果比实际扇区数少1 </span><br><span class="line">dec ax                          ;已经读了一个扇区，扇区总数减1 </span><br></pre></td></tr></table></figure>
+
+<p>前两条指令是将<code>program_length</code>也就是整个程序的大小的高16位置传送到寄存器<code>DX</code>，低16位寄存器传送到寄存器<code>AX</code>中。</p>
+<h6 id="cmp-jz-jnz指令理解"><a href="#cmp-jz-jnz指令理解" class="headerlink" title="cmp jz jnz指令理解"></a>cmp jz jnz指令理解</h6><p><code>cmp</code>指令中，如果两个操作数相等，则ZF被设置为1，表示条件为假或”等于零”；如果ZF为0，表示条件为真或”不等于零”。你可能觉得反直觉，<code>cmp</code>指令本质上是将两个数字相减，如果是 0 就将ZF设置为 1。</p>
+<p><code>jz</code> 和 <code>jnz</code> 指令分别根据 ZF 的状态来决定是否跳转。具体来说：</p>
+<ul>
+<li><code>jnz</code>（Jump if Not Zero）指令会在ZF标志位不等于1时跳转，也就是在条件为真（不等于零）时跳转。</li>
+<li><code>jz</code>（Jump if Zero）指令会在ZF标志位等于1时跳转，也就是在条件为假（等于零）时跳转。</li>
+</ul>
+<p>简单记就是：如果条件为真，也就是 1 ,也就是”if Not Zero”，也就对应了<code>jnz</code>，<code>jz</code>同理。</p>
+<p>有了上面的知识储备，让我们来看下面代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"> cmp dx,0</span><br><span class="line"> jnz @1                          </span><br><span class="line"></span><br><span class="line">@1:</span><br><span class="line">      cmp ax,0                        ;考虑实际长度小于等于512个字节的情况 </span><br><span class="line">      jz direct</span><br><span class="line">      </span><br><span class="line">      ;读取剩余的扇区</span><br><span class="line">      push ds                         ;以下要用到并改变DS寄存器 </span><br><span class="line"></span><br><span class="line">      mov cx,ax                       ;循环次数（剩余扇区数）</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>如果<code>dx != 0</code>那么就跳入<code>@1</code>标签内。而下面是如果<code>ax == 0</code>就进入标签<code>dircrt</code>处执行指令。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/x86%E6%B1%87%E7%BC%96/" rel="tag"># x86汇编</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/14/%E5%9C%B0%E5%9D%80%E3%80%81section%E3%80%81vstart/" rel="prev" title="地址、section、vstart">
+      <i class="fa fa-chevron-left"></i> 地址、section、vstart
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/10/17/%E6%9D%A1%E6%AC%BE26/" rel="next" title="条款26.md">
+      条款26.md <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%A8%E6%88%B7%E7%A8%8B%E5%BA%8F%E5%A4%B4%E9%83%A8"><span class="nav-number">1.</span> <span class="nav-text">用户程序头部</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%94%A8%E6%88%B7%E7%A8%8B%E5%BA%8F%E5%A4%B4%E9%83%A8%E5%BF%85%E9%A1%BB%E5%8C%85%E5%90%AB%E7%9A%84%E4%BF%A1%E6%81%AF"><span class="nav-number">1.1.</span> <span class="nav-text">用户程序头部必须包含的信息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B"><span class="nav-number">1.2.</span> <span class="nav-text">实例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%A0%E8%BD%BD%E5%99%A8%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">加载器的工作流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E5%92%8C%E5%86%B3%E5%AE%9A%E5%8A%A0%E8%BD%BD%E4%BD%8D%E7%BD%AE"><span class="nav-number">2.1.</span> <span class="nav-text">初始化和决定加载位置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E5%8A%A0%E8%BD%BD%E7%94%A8%E6%88%B7%E7%A8%8B%E5%BA%8F"><span class="nav-number">2.2.</span> <span class="nav-text">准备加载用户程序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E7%A1%AC%E7%9B%98%E6%8E%A7%E5%88%B6%E7%AB%AF%E5%8F%A3%E8%AF%BB%E6%89%87%E5%8C%BA%E6%95%B0%E6%8D%AE"><span class="nav-number">2.3.</span> <span class="nav-text">通过硬盘控制端口读扇区数据</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#CHS%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.3.1.</span> <span class="nav-text">CHS模式</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%BB%E9%80%BB%E8%BE%91%E6%89%87%E5%8C%BA%EF%BC%8C%E5%85%B7%E4%BD%93%E8%BF%87%E7%A8%8B"><span class="nav-number">2.3.2.</span> <span class="nav-text">读逻辑扇区，具体过程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%87%E7%A8%8B%E8%B0%83%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">过程调用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#16%E4%BD%8D%E7%9B%B8%E5%AF%B9%E8%BF%91%E8%B0%83%E7%94%A8"><span class="nav-number">3.1.</span> <span class="nav-text">16位相对近调用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#16%E4%BD%8D%E9%97%B4%E6%8E%A5%E7%BB%9D%E5%AF%B9%E8%BF%91%E8%B0%83%E7%94%A8"><span class="nav-number">3.2.</span> <span class="nav-text">16位间接绝对近调用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#16%E4%BD%8D%E7%9B%B4%E6%8E%A5%E7%BB%9D%E5%AF%B9%E8%BF%9C"><span class="nav-number">3.3.</span> <span class="nav-text">16位直接绝对远</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#16%E4%BD%8D%E9%97%B4%E6%8E%A5%E7%BB%9D%E5%AF%B9%E8%BF%9C%E8%B0%83%E7%94%A8"><span class="nav-number">3.4.</span> <span class="nav-text">16位间接绝对远调用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%94%E5%9B%9E%E6%8C%87%E4%BB%A4-ret"><span class="nav-number">3.5.</span> <span class="nav-text">返回指令 ret</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%94%E5%9B%9E%E6%8C%87%E4%BB%A4-retf"><span class="nav-number">3.6.</span> <span class="nav-text">返回指令 retf</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%81%A2%E5%A4%8D"><span class="nav-number">3.7.</span> <span class="nav-text">恢复</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8A%A0%E8%BD%BD%E7%94%A8%E6%88%B7%E7%A8%8B%E5%BA%8F"><span class="nav-number">3.8.</span> <span class="nav-text">加载用户程序</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#cmp-jz-jnz%E6%8C%87%E4%BB%A4%E7%90%86%E8%A7%A3"><span class="nav-number">3.8.0.1.</span> <span class="nav-text">cmp jz jnz指令理解</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zhendewokusi"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zhendewokusi</p>
+  <div class="site-description" itemprop="description">本网站主要用于记录我个人学习的内容,希望对你有所帮助</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zhendewokusi" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zhendewokusi" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:768672249@qq.com" title="E-Mail → mailto:768672249@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhendewokusi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/pangu@4/dist/browser/pangu.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+  <script async src="/js/love.min.js"></script>
+
+    </div>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/wanko.model.json"},"display":{"position":"left","width":100,"height":200},"mobile":{"show":false},"log":false});</script></body>
+</html>
