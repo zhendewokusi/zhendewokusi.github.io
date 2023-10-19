@@ -162,6 +162,95 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/18/%E4%B8%AD%E6%96%AD%E5%92%8C%E5%8A%A8%E6%80%81%E6%97%B6%E9%92%9F%E6%98%BE%E7%A4%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhendewokusi">
+      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="元芳你怎么看">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/10/18/%E4%B8%AD%E6%96%AD%E5%92%8C%E5%8A%A8%E6%80%81%E6%97%B6%E9%92%9F%E6%98%BE%E7%A4%BA/" class="post-title-link" itemprop="url">中断和动态时钟显示</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-10-18 22:47:06" itemprop="dateCreated datePublished" datetime="2023-10-18T22:47:06+08:00">2023-10-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="外部硬件中断"><a href="#外部硬件中断" class="headerlink" title="外部硬件中断"></a>外部硬件中断</h3><p>外部硬件中断就是从处理器外面来的中断信号，优先级很高。</p>
+<p>它的实现是通过两个信号线引入处理器内部的，分别叫<code>NMI</code>和<code>INTR</code>。</p>
+<h4 id="非屏蔽中断（Non-Maskable-Interrupt-NMI）"><a href="#非屏蔽中断（Non-Maskable-Interrupt-NMI）" class="headerlink" title="非屏蔽中断（Non Maskable Interrupt,NMI）"></a>非屏蔽中断（Non Maskable Interrupt,NMI）</h4><p>需要两条线的原因是不一定每一个中断的优先级都需要立刻处理。当涉及到非屏蔽中断，通常是一些紧急且必须立即处理的硬件事件。</p>
+<p><strong>硬件中断的优先级管理</strong>：某些系统可能会使用外部硬件中断来处理中断请求的优先级。这意味着当多个中断同时发生时，不是所有中断都需要立即处理。处理器可以为不同的中断信号分配不同的优先级，从而决定哪些中断需要立即处理，而哪些可以等待。</p>
+<p>需要立即处理的：</p>
+<ul>
+<li>电池电量低，系统会发出一个中断告诉处理器快没电了。</li>
+<li>内存访问电路有校验错误（读取错误）。</li>
+</ul>
+<p>不那么着急处理的：</p>
+<p>举个例子，一个嵌入式系统可能有多个外部硬件设备连接到处理器，包括键盘、鼠标和网络适配器。如果用户同时按下键盘上的按键和鼠标点击，系统可以根据设定的中断优先级来决定哪个中断首先得到处理。通常情况下，键盘中断可能具有较高的优先级，因为用户通常期望键盘响应更快，而鼠标中断则有较低的优先级，因为它不太紧急。</p>
+<p>中断信号的来教叫做 <strong>中断源</strong>。传统的兼容模式下，NMI的中断源通过一个<strong>与非门</strong>连接到处理器，处理器的NMI引脚是<strong>高电平有效</strong>，中断信号是<strong>低电平</strong>有效,也就是NMI引脚是低电平则没有中断。</p>
+<p>即使NMI与非门的输出为高时，也不能立刻被识别，还需要<strong>至少</strong>维持4个以上的时钟周期才算有效。</p>
+<p>处理器还应当知道发生了什么事，以便于采用适当的处理措施。每个类型的中断都被统一编号，被称为中断类型号、中断向量或者中断号。而有些比较严重的事件就在实模式下被赋予了统一的中断号 2 ，一旦发生 2 号中断，处理器和软件系统通常会放弃继续正常工作的念头，也不会试图纠正已经发生的问题和错误。</p>
+<h4 id="可屏蔽中断-Interrupt-Request-INTR"><a href="#可屏蔽中断-Interrupt-Request-INTR" class="headerlink" title="可屏蔽中断(Interrupt Request,INTR)"></a>可屏蔽中断(Interrupt Request,INTR)</h4><p>更多的信号不会意味着灾难，但是也十分紧急。这种中断有两个特点：1.数量多，2.可以被屏蔽（处理器假装听不见，不处理）。这种硬件中断就是可屏蔽的中断。</p>
+<p>由于可能有多台设备同时发送中断请求，但是处理器每次只能处理一个中断，这就需要一个中间层进行仲裁，优先处理优先级更高的。个人计算机中使用最多的就是<code>8259芯片</code>。Intel处理器允许256个中断，8259负责15个不固定的中断号，8个中断输入引脚。引脚的<code>IR0</code>优先级向<code>IR7</code>递减，从片是级联在主片的<code>IR2</code>引脚。</p>
+<p>个人计算机中有两块<code>8259芯片</code>，并且两块的关系是级联：主片的<code>INT输出</code>直接送到处理器<code>INTR</code>引脚；从片的<code>INT输出</code>送到第一块的引脚2上，一共提供15个中断信号。</p>
+<ul>
+<li>主片的引脚 0 接的是系统定时器&#x2F;定时器芯片，主片的端口号是<code>0x20</code>和<code>0x21</code></li>
+<li>从片的引脚 0 接的是实时时钟芯片(RTC)，从片的端口号是<code>0xa0</code>和<code>0xa1</code></li>
+</ul>
+<p>8259内部有中断屏蔽寄存器（IMR）8位寄存器，对应八个引脚，对应的位 <strong>0 表示允许，1 表示阻断</strong>。</p>
+<p>即使中断从8529发送出去，最终解释权也归处理器。处理器内部的标志寄存器有个<code>IF</code>标志位（中断标志）。当<code>IF</code>为0,中断信号被忽略。</p>
+<p>对于IF标志位的处理有两条指令:<code>cli</code>（Clear Interrupt Flag）和<code>sti</code>(SeT Interrupt flag)。</p>
+<p><strong>中断嵌套</strong>：当一个中断事件正在处理时，如果来了优先级更高的中断事件，允许暂时中止当前的中断事件，先为优先级较高的中断事件服务。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/17/%E6%9D%A1%E6%AC%BE26/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -193,7 +282,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -257,7 +346,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -329,7 +418,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -401,7 +490,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -476,7 +565,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -549,7 +638,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -621,7 +710,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -693,7 +782,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -769,7 +858,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
+                <time title="修改时间：2023-10-19 21:20:37" itemprop="dateModified" datetime="2023-10-19T21:20:37+08:00">2023-10-19</time>
               </span>
 
           
@@ -787,79 +876,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2023/10/09/%E6%9D%A1%E6%AC%BE23/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/09/%E6%9D%A1%E6%AC%BE21/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="zhendewokusi">
-      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="元芳你怎么看">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/10/09/%E6%9D%A1%E6%AC%BE21/" class="post-title-link" itemprop="url">条款 21 :优先选用 std::make_unique 和std::make_shared, 而非直接使用 new</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-10-09 22:04:13" itemprop="dateCreated datePublished" datetime="2023-10-09T22:04:13+08:00">2023-10-09</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-18 22:57:46" itemprop="dateModified" datetime="2023-10-18T22:57:46+08:00">2023-10-18</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h4 id="使用std-make-shared的理由-代码精简"><a href="#使用std-make-shared的理由-代码精简" class="headerlink" title="使用std::make_shared的理由:代码精简"></a>使用std::make_shared的理由:代码精简</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">upw1</span><span class="params">(std::make_unique&lt;Widget&gt;())</span></span>;</span><br><span class="line"><span class="function">std::unique_ptr&lt;Widget&gt; <span class="title">upw2</span><span class="params">(<span class="keyword">new</span> Widget)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">spw1</span><span class="params">(std::make_shared&lt;Widget&gt;())</span></span>;</span><br><span class="line"><span class="function">std::shared_ptr&lt;Widget&gt; <span class="title">spw2</span><span class="params">(<span class="keyword">new</span> Widget)</span></span>;</span><br></pre></td></tr></table></figure>
-<p>使用make系列函数只有一个Widget,代码风格不冗余。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2023/10/09/%E6%9D%A1%E6%AC%BE21/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -950,7 +966,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-count">12</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
