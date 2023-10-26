@@ -28,7 +28,7 @@
 <meta property="og:description" content="外部硬件中断外部硬件中断就是从处理器外面来的中断信号，优先级很高。 它的实现是通过两个信号线引入处理器内部的，分别叫NMI和INTR。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-10-18T14:47:06.000Z">
-<meta property="article:modified_time" content="2023-10-23T06:41:47.620Z">
+<meta property="article:modified_time" content="2023-10-26T11:49:17.278Z">
 <meta property="article:author" content="zhendewokusi">
 <meta property="article:tag" content="x86汇编">
 <meta name="twitter:card" content="summary">
@@ -195,7 +195,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -246,9 +246,75 @@
 <li>返回到断点继续执行。所有中断处理程序的最后一条必须是中断返回指令<code>iret</code>。依次恢复<code>IP</code>，<code>CS</code>，<code>FLAGS</code>的原始数值。</li>
 </ol>
 <p>而<code>NMI</code>不会从外部获得中断号，自动生成中断号码 2,其他过程相同。</p>
-<h4 id="实时时钟、CMOS-RAM-和-BCD编码"><a href="#实时时钟、CMOS-RAM-和-BCD编码" class="headerlink" title="实时时钟、CMOS RAM 和 BCD编码"></a>实时时钟、CMOS RAM 和 BCD编码</h4><p>计算机为什么能精准显示日期和时间？在外围设备控制器芯片<code>ICH</code>内部，集成了实时时钟电路（RTC）和两小块由互补金属氧化物材料组成的静态存储器（CMOS RAM）。实时时钟电路负责计时，日期和时间存储在静态存储器中。</p>
+<h4 id="实时时钟、CMOS-RAM-和-BCD编码"><a href="#实时时钟、CMOS-RAM-和-BCD编码" class="headerlink" title="实时时钟、CMOS RAM 和 BCD编码"></a>实时时钟、CMOS RAM 和 BCD编码</h4><p>计算机为什么能精准显示日期和时间？在外围设备控制器芯片<code>ICH</code>内部，集成了实时时钟电路（RTC）和两小块由互补金属氧化物材料组成的静态存储器（CMOS RAM）。实时时钟电路负责计时，日期和时间存储在静态存储器中。存储方式通常是二进制编码的十进制数（BCD）。  </p>
 <p>实时时钟是全天候跳动的，即使断电。因为主板上有个小电池供电。</p>
 <p>日期和时间信息存储在<code>CMOS RAM</code>中，通常有128字节，日期和时间信息只占了一小部分容量，其他空间用于保存整机的配置信息（硬件类型、工作参数、开机密码、辅助设备启动顺序）</p>
+<p><code>CMOS RAM</code>的访问需要通过两个端口：<code>0x70</code>或者<code>0x74</code>是索引端口，用来指定<code>CMOS RAM</code>内的单元；<code>0x71</code>或者<code>0x75</code>是数据端口，用来读写对应单元内的内容。</p>
+<table>
+<thead>
+<tr>
+<th>偏移地址</th>
+<th>内容</th>
+<th>偏移地址</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0x00</td>
+<td>秒</td>
+<td>0x01</td>
+<td>闹钟秒</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>分</td>
+<td>0x03</td>
+<td>闹钟分</td>
+</tr>
+<tr>
+<td>0x04</td>
+<td>时</td>
+<td>0x05</td>
+<td>闹钟时</td>
+</tr>
+<tr>
+<td>0x06</td>
+<td>星期</td>
+<td>0x07</td>
+<td>日</td>
+</tr>
+<tr>
+<td>0x08</td>
+<td>月</td>
+<td>0x09</td>
+<td>年</td>
+</tr>
+<tr>
+<td>0x0A</td>
+<td>寄存器A</td>
+<td>0x0B</td>
+<td>寄存器B</td>
+</tr>
+<tr>
+<td>0x0C</td>
+<td>寄存器C</td>
+<td>0x0D</td>
+<td>寄存器D</td>
+</tr>
+</tbody></table>
+<p>下面的例子是用来获取当时是星期几:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov al,0x06</span><br><span class="line">out 0x70,al</span><br><span class="line">in al,0x71</span><br></pre></td></tr></table></figure>
+<ol>
+<li><p><code>out 0x70, al</code>: 这是一个输出指令，用于将AL寄存器中的值（在这里是0x06）写入到I&#x2F;O端口0x70。在x86架构中，0x70端口通常用于控制实时时钟芯片的寄存器。这个操作可能用于设置实时时钟的某些配置，例如将其配置为读取或写入日期和时间信息。</p>
+</li>
+<li><p><code>in al, 0x71</code>: 这是一个输入指令，用于从I&#x2F;O端口0x71读取数据，并将读取的数据存储到AL寄存器中。在这个上下文中，0x71端口通常用于读取实时时钟的状态或数据，例如当前的时间信息。</p>
+</li>
+</ol>
+<p>端口的最高位是控制<code>NMI</code>中断的开关。为0时，允许<code>NMI</code>中断到达处理器；为1时，阻断所有<code>NMI</code>信号，它<strong>不是</strong>中断信号，但是能控制与非门的输出。其他七个比特实际上用于指定<code>CMOS RAM</code>单元的索引号。</p>
+<h4 id="初始化8259、RTC和中断向量表"><a href="#初始化8259、RTC和中断向量表" class="headerlink" title="初始化8259、RTC和中断向量表"></a>初始化8259、RTC和中断向量表</h4><p>寄存器A：寄存器A通常用于配置RTC的中断频率。通过设置寄存器A的值，你可以定义RTC中断的触发频率，例如每秒触发一次。这通常涉及到配置寄存器A的低4位（Rate Selector）。</p>
+<p>寄存器B：寄存器B通常包含一些控制中断的位。它允许你启用或禁用RTC中断，并可能还有其他控制位，例如24小时模式、BCD码格式等。</p>
+<p>寄存器C：寄存器C用于指示中断的发生。当RTC触发中断时，寄存器C的某些位会被设置，以告知系统发生了中断。</p>
+<p>寄存器D：寄存器D通常包含一些额外的控制位，可能与其他RTC功能有关。</p>
 
     </div>
 
@@ -267,10 +333,13 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2023/10/17/%E6%9D%A1%E6%AC%BE26/" rel="prev" title="条款26.md">
-      <i class="fa fa-chevron-left"></i> 条款26.md
+    <a href="/2023/10/14/%E5%8A%A0%E8%BD%BD%E7%A8%8B%E5%BA%8F%EF%BC%88%E5%99%A8%EF%BC%89%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B/" rel="prev" title="加载程序（器）的工作流程">
+      <i class="fa fa-chevron-left"></i> 加载程序（器）的工作流程
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2023/10/25/TCP%E7%9A%84%E6%9C%8D%E5%8A%A1%E6%A8%A1%E5%9E%8B/" rel="next" title="TCP的服务模型">
+      TCP的服务模型 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -329,7 +398,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E9%83%A8%E7%A1%AC%E4%BB%B6%E4%B8%AD%E6%96%AD"><span class="nav-number">1.</span> <span class="nav-text">外部硬件中断</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%9D%9E%E5%B1%8F%E8%94%BD%E4%B8%AD%E6%96%AD%EF%BC%88Non-Maskable-Interrupt-NMI%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">非屏蔽中断（Non Maskable Interrupt,NMI）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AF%E5%B1%8F%E8%94%BD%E4%B8%AD%E6%96%AD-Interrupt-Request-INTR-1-7-4-9-2-5"><span class="nav-number">1.2.</span> <span class="nav-text">可屏蔽中断(Interrupt Request,INTR)1,7,4,9,2,5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E6%A8%A1%E5%BC%8F%E4%B8%8B%E7%9A%84%E4%B8%AD%E6%96%AD%E5%90%91%E9%87%8F%E8%A1%A8"><span class="nav-number">1.3.</span> <span class="nav-text">实模式下的中断向量表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E6%97%B6%E6%97%B6%E9%92%9F%E3%80%81CMOS-RAM-%E5%92%8C-BCD%E7%BC%96%E7%A0%81"><span class="nav-number">1.4.</span> <span class="nav-text">实时时钟、CMOS RAM 和 BCD编码</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E9%83%A8%E7%A1%AC%E4%BB%B6%E4%B8%AD%E6%96%AD"><span class="nav-number">1.</span> <span class="nav-text">外部硬件中断</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%9D%9E%E5%B1%8F%E8%94%BD%E4%B8%AD%E6%96%AD%EF%BC%88Non-Maskable-Interrupt-NMI%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">非屏蔽中断（Non Maskable Interrupt,NMI）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AF%E5%B1%8F%E8%94%BD%E4%B8%AD%E6%96%AD-Interrupt-Request-INTR-1-7-4-9-2-5"><span class="nav-number">1.2.</span> <span class="nav-text">可屏蔽中断(Interrupt Request,INTR)1,7,4,9,2,5</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E6%A8%A1%E5%BC%8F%E4%B8%8B%E7%9A%84%E4%B8%AD%E6%96%AD%E5%90%91%E9%87%8F%E8%A1%A8"><span class="nav-number">1.3.</span> <span class="nav-text">实模式下的中断向量表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E6%97%B6%E6%97%B6%E9%92%9F%E3%80%81CMOS-RAM-%E5%92%8C-BCD%E7%BC%96%E7%A0%81"><span class="nav-number">1.4.</span> <span class="nav-text">实时时钟、CMOS RAM 和 BCD编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%968259%E3%80%81RTC%E5%92%8C%E4%B8%AD%E6%96%AD%E5%90%91%E9%87%8F%E8%A1%A8"><span class="nav-number">1.5.</span> <span class="nav-text">初始化8259、RTC和中断向量表</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -345,14 +414,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">13</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

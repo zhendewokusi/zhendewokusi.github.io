@@ -162,6 +162,225 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/25/TCP%E6%9C%8D%E5%8A%A1%E8%BF%9E%E6%8E%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhendewokusi">
+      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="元芳你怎么看">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/10/25/TCP%E6%9C%8D%E5%8A%A1%E8%BF%9E%E6%8E%A5/" class="post-title-link" itemprop="url">TCP服务连接</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-10-25 13:10:42" itemprop="dateCreated datePublished" datetime="2023-10-25T13:10:42+08:00">2023-10-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="TCP的建立与终止"><a href="#TCP的建立与终止" class="headerlink" title="TCP的建立与终止"></a>TCP的建立与终止</h3><h4 id="四元组"><a href="#四元组" class="headerlink" title="四元组"></a>四元组</h4><p>四元组通常指的是计算机网络中用于唯一标识一个网络连接的四个关键信息，包括：</p>
+<ol>
+<li><p><strong>源IP地址</strong>：这是连接发起方（通常是客户端）的IP地址。</p>
+</li>
+<li><p><strong>源端口号</strong>：这是连接发起方的端口号。</p>
+</li>
+<li><p><strong>目标IP地址</strong>：这是连接的目标（通常是服务器）的IP地址。</p>
+</li>
+<li><p><strong>目标端口号</strong>：这是连接的目标的端口号。</p>
+</li>
+</ol>
+<h4 id="初始序列号"><a href="#初始序列号" class="headerlink" title="初始序列号"></a>初始序列号</h4><p>TCP报文段在经过网络后到达目标端口的次序是乱序的且存在延迟。TCP提出了序列号的概念，且在TCP的三次握手中互相得知对方正确的序列号，但是初始序列号的选择也有讲究。为防止出现与其他连接的序列号重叠的情况。</p>
+<p>还有一种情况，一个四元组，因为网络的波动，某个报文段长延迟导致连接关闭，而后又用相同的四元组重新连接，网络中延迟的报文段又被接收端视作有效数据重新接收。这太可怕了，需要一种措施来避免序列号重叠的问题。</p>
+<p>现代系统采用<strong>半随机</strong>的方法来初始化序列号，生成的序列号很难才出来。除了让序列号或者临时端口变得难猜出来，也可以使用加密来实现上述功能。</p>
+<h4 id="TCP的脆弱性"><a href="#TCP的脆弱性" class="headerlink" title="TCP的脆弱性"></a>TCP的脆弱性</h4><p>如果有合适的序列号、IP地址、端口号，任何人都可以伪造出一个TCP报文段，从而打断TCP的正常连接。</p>
+<h4 id="TCP连接"><a href="#TCP连接" class="headerlink" title="TCP连接"></a>TCP连接</h4><p>一个TCP连接由一个四元组构成，分为三个步骤：启动、数据传输、退出。</p>
+<h5 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h5><p>建立一个TCP连接，包含下面几个步骤：</p>
+<ol>
+<li><p>发送请求者（通常是客户端）给接收者发送 <code>SYN</code> 报文段，内包含自己想要连接的端口号，客户端的初始序列号 <code>ISN</code> 以及一些选项。</p>
+</li>
+<li><p>服务端接收到 <code>SYN</code> 报文段后，它会回应一个 <code>SYN + ACK</code> 报文段，<code>SYN</code> 内包含服务端的初始序列号 <code>ISN</code>，而 <code>ACK</code> 用于确认客户端的初始序列号（<code>ISN</code>）已经成功接收，因此它的值是客户端的 <code>ISN + 1</code>。</p>
+</li>
+<li><p>客户端接收到 <code>SYN + ACK</code> 报文段后，会发送一个 <code>ACK</code> 报文段，这个 <code>ACK</code> 报文段内包含了服务端的初始序列号 <code>ISN</code>（因为它已经在 <code>SYN</code> 中确认过），以及确认号（<code>ACK</code>）用于确认服务端的初始序列号已经成功接收。通常，<code>ACK</code> 序列号的值是服务端的 <code>ISN + 1</code>。</p>
+</li>
+</ol>
+<p>这是传统的TCP三次握手的过程，它确保连接的可靠建立。在这个过程中，<code>SYN</code> 报文段用于同步连接，而 <code>ACK</code> 报文段用于确认已接收的数据。这个过程确保了双方都知道彼此的初始序列号，并已经建立了双向的通信通道。</p>
+<h6 id="三次握手的目的"><a href="#三次握手的目的" class="headerlink" title="三次握手的目的"></a>三次握手的目的</h6><ul>
+<li>让通信双方了解一个连接正在建立</li>
+<li>利用数据包的选项来承载一些特殊信息</li>
+<li>交换初始序列号</li>
+</ul>
+<h6 id="三次握手分别失败的处理"><a href="#三次握手分别失败的处理" class="headerlink" title="三次握手分别失败的处理"></a>三次握手分别失败的处理</h6><ol>
+<li><p>第一次握手失败：客户端发送 <code>SYN</code> 报文段后，如果服务器没有收到或者没有正确响应，客户端可能会重新发送 <code>SYN</code> 报文段。这是因为 TCP 是面向连接的，如果没有得到响应，客户端通常会尝试重新建立连接。</p>
+</li>
+<li><p>第二次握手失败：如果服务器收到了客户端的 <code>SYN</code> 报文段并回应了 <code>SYN + ACK</code> 报文段，但客户端没有正确接收或响应，服务器可能会重新发送 <code>SYN + ACK</code> 报文段。服务器通常会在一定时间内等待客户端的确认，如果没有得到，它可能会认为连接失败并关闭。</p>
+</li>
+<li><p>第三次握手失败：如果客户端收到了服务器的 <code>SYN + ACK</code> 报文段但没有正确确认，服务器可能会等待一段时间以等待客户端的 <code>ACK</code> 报文段。如果在一定时间内没有得到客户端的确认，服务器可能会关闭连接。</p>
+</li>
+</ol>
+<h5 id="数据传输"><a href="#数据传输" class="headerlink" title="数据传输"></a>数据传输</h5><h5 id="退出"><a href="#退出" class="headerlink" title="退出"></a>退出</h5><p>任何一方都可以发起退出操作。但是通常是又客户端发起的，也不排除有服务器处理完相应业务后主动发起退出。通常一个关闭操作是由应用程序发出的（比如系统调用close()）。只有双方都完成关闭操作后，才构成一个完整的关闭。当然也支持双方同时关闭连接的操作，比较少见。</p>
+<p>关闭一个TCP连接通常需要4个报文段，也就是TCP的四次挥手：</p>
+<ol>
+<li><p>主动断开连接的一方（通常是客户端）向被动断开连接的一方（通常是服务器）发送包含<code>FIN</code>标志的TCP报文，其中包含了自己当前的序列号（M）。这通知被动方，客户端不再发送数据，但仍然愿意接收来自服务器的数据。此时，服务器仍然可以向客户端发送数据。</p>
+</li>
+<li><p>被动断开连接的一方（通常是服务器）接收到包含<code>FIN</code>标志的报文后，将M + 1作为确认号（ACK）发送给主动断开连接的一方（客户端），表示已成功接收<code>FIN</code>报文，确认接收并停止主动发送数据，但仍然允许被动接收数据。此时，客户端也可以继续向服务器发送数据。</p>
+</li>
+</ol>
+<p>在第一步和第二步之后，连接仍然是打开的，允许双方接收数据。真正的连接终止发生在第三和第四步：</p>
+<ol start="3">
+<li><p>被动方（服务器）转变成主动方，向主动断开连接的一方（客户端）发送包含<code>FIN</code>标志的TCP报文，其中包含自己当前的序列号（N）。这通知客户端，服务器不再发送数据，但仍然愿意接收来自客户端的数据。</p>
+</li>
+<li><p>客户端接收到包含<code>FIN</code>标志的报文后，发送<code>ACK</code>以进行确认。此时，客户端也停止发送数据，连接完全关闭。服务器收到客户端的<code>ACK</code>后，连接也完全关闭。</p>
+</li>
+</ol>
+<p>所以，连接的关闭是逐步的，第三步和第四步后，双方都不再允许被动接收数据，连接处于完全关闭状态。在第一步和第二步之后，仍然允许被动接收数据，这使得双方有机会完成未完成的数据传输或处理挂起的请求。</p>
+<h6 id="退出需要发送序列号的目的"><a href="#退出需要发送序列号的目的" class="headerlink" title="退出需要发送序列号的目的"></a>退出需要发送序列号的目的</h6><p>确保对方正确接收到关闭请求（FIN报文）和在关闭连接的过程中保持数据的有序传输。这有助于防止数据包的丢失和乱序传输，从而确保连接的可靠关闭。</p>
+<h6 id="TCP半关闭"><a href="#TCP半关闭" class="headerlink" title="TCP半关闭"></a>TCP半关闭</h6><p>TCP是支持半关闭的。在TCP半关闭的操作中，连接的一个方向被关闭，另一个方向仍在传输数据直到它被关闭为止。应用程序只需要使用<code>shutdown()</code>来代替 <code>close()</code> 就可以了。通信的任何一方都可以发起半关闭操作。</p>
+<p>实现这个操作并不难，和TCP的关闭的前两个步骤相同，主动发起半关闭的端口在执行完这两步操作后就不能主动发送数据了，而被动发起半关闭的端口依旧可以发送数据，主动发起半关闭的端口需要对数据进行<code>ACK</code>报文段发送确认。被动发起半关闭的端口发送完数据后，执行TCP关闭的后两步，就实现了TCP的半关闭。</p>
+<h5 id="同时打开与关闭"><a href="#同时打开与关闭" class="headerlink" title="同时打开与关闭"></a>同时打开与关闭</h5><p>没错，同时打开和关闭是可以在特点情况下实现的。通信双方在接收到对方的<code>SYN</code>之前必须发送一个<code>SYN</code>；两个<code>SYN</code>必须通过网络送达对方。该场景要求双方必须有 IP 和端口号，并且要告诉对方。这种很极限的情况下，就可以成为同时打开。</p>
+<p>比如主机A的一个应用程序通过本地6666端口向主机B的本地8888端口发送TCP连接请求，而主机B的应用程序在本地的8888端口向主机A的本地6666端口发送TCP连接请求，这就可以称为<strong>同时打开</strong>。而主机A的一个客户端向主机B的一个服务器发送TCP连接请求，同时有主机B的一个客户端向主机A的一个服务器发送TCP连接请求，这不能成为同时打开，因为实质上是进行了两次互不相干的TCP连接，服务器始终是连接的被动打开者而不是主动打开者，各自的客户端也会选择不同的端口。</p>
+<p>同时打开交换了4个报文段，比三次握手多了一次。而由于是双方同时发送请求的，也就没有客户端和服务端的区分。双方分别发送<code>SYN</code>报文段，分别接收到对方的<code>SYN</code>报文段，分别回复<code>SYN-ACK</code>。同时关闭过程和同时打开基本上原理一致。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/25/TCP%E7%9A%84%E6%9C%8D%E5%8A%A1%E6%A8%A1%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhendewokusi">
+      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="元芳你怎么看">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/10/25/TCP%E7%9A%84%E6%9C%8D%E5%8A%A1%E6%A8%A1%E5%9E%8B/" class="post-title-link" itemprop="url">TCP的服务模型</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-10-25 08:24:28" itemprop="dateCreated datePublished" datetime="2023-10-25T08:24:28+08:00">2023-10-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <!-- #### 拥塞控制
+
+当发送方和接收方均没有受到它们其中任意一个`ACK`之外，允许发送方注入W个分组到网络。如果发送方和接收方足够快，网络没有丢失分组以及空间无限（理想情况），这就意味着通讯速率正比于窗口大小，分组大小，反比于往返时间。**当来自接收方的窗口通告夹带发送方的值W时，那么发送方的全部速率就被限制而不能超越接收方**。这样发送方和接收方的速率问题解决了，那么中间的网络呢？如果它两之间有一个会有限制内存的路由器，路由器和底层的链路层进行交互，如果发送方的速率可能超过某个路由器的能力，就会导致**丢包**。
+
+**拥塞控制**涉及发送方降低速率以不至于压垮其与接收方的网络 -->
+
+<h3 id="TCP的服务模型"><a href="#TCP的服务模型" class="headerlink" title="TCP的服务模型"></a>TCP的服务模型</h3><p>虽然<code>TCP</code>和<code>UDP</code>一样都在网络层，但是<code>TCP</code>给应用程序提供了一种不同于<code>UDP</code>的服务。<code>TCP</code>提供了一种<strong>面向连接</strong>、<strong>可靠的字节流</strong>服务。</p>
+<h4 id="面向连接"><a href="#面向连接" class="headerlink" title="面向连接"></a>面向连接</h4><p><code>TCP</code>没有组播和广播的概念。面向连接是指两个基于<code>TCP</code>协议的应用程序必须在它们交换数据前，通过相互联系来建立一个<code>TCP</code>连接。</p>
+<h4 id="可靠的字节流"><a href="#可靠的字节流" class="headerlink" title="可靠的字节流"></a>可靠的字节流</h4><p><code>TCP</code>提供一种字节流抽象概念给应用程序。没有由TCP自动插入的消息边界：比如发送方一次写入10字节，随后20字节，50字节，而接收方可能是分四次读取这80字节。每个端点会独立的选择自己的读和写的大小。</p>
+<p><code>TCP</code>不会读取字节流内的字节内容。它甚至不清楚交换的字节流是ASCII码还是二进制码。</p>
+<h3 id="TCP中的可靠性"><a href="#TCP中的可靠性" class="headerlink" title="TCP中的可靠性"></a>TCP中的可靠性</h3><ol>
+<li>提供一个字节流接口，<code>TCP</code>必须把一个发送应用程序的字节流转换成一组IP可以携带的分组。这就是<strong>组包</strong>。这些分组包含序列号，该序列号在<code>TCP</code>中实际代表了每个分组的第一个字节相对于整个数据流的字节偏移，而不是分组号。这就允许了分组在传送中的大小是可变的，并且允许它们组合，这就是<strong>重新组包</strong>。字节流会被分散成<code>TCP</code>认为最佳大小的块来发送。</li>
+<li>提供了<strong>强制的校验和</strong>。该校验和涉及头部、传输数据、IP头部的所有字段。这是一个端对端的伪头部，用于检测传输过程中引入的比特差错。如果一个带无效校验和的报文段到达，<code>TCP</code>就会抛弃它，并且不会对发送方发送任何确认。然而，TCP接收端可能会对一个已经接受的报文段发送确认，用来帮助发送方计算它的<strong>拥塞控制</strong>。该校验和对于大数据传输的安全性其实不能完全保证，因此用户程序在发送大文件时最后自己实现一个差错保护的方法。</li>
+<li>发送一组报文段时，设置一个重传计时器。<code>TCP</code>不会为每个报文段设置一个重传计时器，而是给发送一个窗口的数据设置一个重传计时器，当有ACK到达时更新超时。如果有一个确认没有及时收到，这个报文段就会被重传。</li>
+<li>接收方会发送一个确认。这个确认会延迟一段时间发送。<code>TCP</code>使用的ACK是累积的，一个指示字节号为n的ACK暗示着所有知道n的字节已经被成功接收。这也可能会带来一个问题，如果中间有一个ACK没有收到，但是后续的ACK确认了前面的报文段。</li>
+<li>提供<strong>双工服务</strong>。也就是数据可以双向流动且互相独立。因此每个端点必须为每个方向维持数据流的字节号。在建立连接的基础上，这个连接的一个方向上的包含数据流的每个<code>TCP</code>报文段也包含相反方向上的报文段的一个ACK。每个报文段也包含一个窗口通告用来实现相反方向的流量控制。</li>
+<li>使用序列号。首先明确<code>TCP</code>是基于<code>IP</code>协议，而<code>IP</code>协议是不会消除重复的数据，也不会提供重传机制。<code>TCP</code>是一个字节流的协议，断然传输的数据是有顺序的。接收方可能会被迫先保持大序列号的数据不交给应用程序，知道小序列号的报文段被填满。</li>
+</ol>
+<h3 id="TCP的头部和封装"><a href="#TCP的头部和封装" class="headerlink" title="TCP的头部和封装"></a>TCP的头部和封装</h3><p>TCP在IP数据报中的封装：</p>
+<table>
+<thead>
+<tr>
+<th>IP头部协议（IPV4）或下一个头部(IPV6)</th>
+<th>TCP头部</th>
+<th>应用程序的数据</th>
+</tr>
+</thead>
+</table>
+<p>默认不带TCP选项的IP头部是20字节。带选项最大可以有60字节。选项包含：最大段大小、时间戳、窗口缩放、选择性ACK。</p>
+<p>源端口 16 目的端口 16<br>序列号 32<br>确认号 32<br>头部长度 4 保留0 4 选项 8 窗口大小 16<br>TCP校验和 16 紧急指针 16 </p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/18/%E4%B8%AD%E6%96%AD%E5%92%8C%E5%8A%A8%E6%80%81%E6%97%B6%E9%92%9F%E6%98%BE%E7%A4%BA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -193,7 +412,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -217,70 +436,6 @@
             </div>
           <!--/noindex-->
         
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/17/%E6%9D%A1%E6%AC%BE26/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="zhendewokusi">
-      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="元芳你怎么看">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/10/17/%E6%9D%A1%E6%AC%BE26/" class="post-title-link" itemprop="url">条款26.md</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-10-17 22:14:14" itemprop="dateCreated datePublished" datetime="2023-10-17T22:14:14+08:00">2023-10-17</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          
       
     </div>
 
@@ -330,7 +485,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -402,7 +557,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -474,7 +629,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -549,7 +704,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -622,7 +777,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -694,7 +849,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -766,7 +921,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
+                <time title="修改时间：2023-10-26 19:49:17" itemprop="dateModified" datetime="2023-10-26T19:49:17+08:00">2023-10-26</time>
               </span>
 
           
@@ -788,78 +943,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2023/10/10/%E6%8C%87%E9%92%88%E5%92%8C%E6%95%B0%E7%BB%84/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/10/09/%E6%9D%A1%E6%AC%BE23/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="zhendewokusi">
-      <meta itemprop="description" content="本网站主要用于记录我个人学习的内容,希望对你有所帮助">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="元芳你怎么看">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/10/09/%E6%9D%A1%E6%AC%BE23/" class="post-title-link" itemprop="url">条款23：理解std::move 和 std::forward</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-10-09 23:04:13" itemprop="dateCreated datePublished" datetime="2023-10-09T23:04:13+08:00">2023-10-09</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-23 14:41:47" itemprop="dateModified" datetime="2023-10-23T14:41:47+08:00">2023-10-23</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="须知"><a href="#须知" class="headerlink" title="须知"></a>须知</h3><p><code>std::move</code> 不做任何移动， <code>std::forward</code> 不做任何转发。它们在运行的时候什么都没干。<br>它们两个都只做了<strong>强制类型转换</strong>，<code>std::move</code> 无条件将实参强制转换成右值，<code>std::forward</code> 是有条件的执行强制类型转换。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2023/10/09/%E6%9D%A1%E6%AC%BE23/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -950,14 +1033,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">13</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
