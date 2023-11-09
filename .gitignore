@@ -6,3 +6,6 @@ node_modules/
 public/
 .deploy*/
 _multiconfig.yml
+
+source/_posts/TCP的服务模型.md
+source/_posts/TCP服务连接.md
