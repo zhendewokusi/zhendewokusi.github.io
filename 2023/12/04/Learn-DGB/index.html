@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhendewokusi.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":20,"offset":40,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn","display":"always"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言GDB 的全称是 GNU Debugger “Caveman debugging” 这个词语的使用是一种夸张和幽默的说法，强调了使用最基本工具进行调试的原始感觉，好像程序员是在用石器时代的工具一样。不要只会最简单的调试，掌握更切近实际的高效技巧会为你调试工作带来不小的便利。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Learn DGB">
+<meta property="og:url" content="http://zhendewokusi.github.io/2023/12/04/Learn-DGB/index.html">
+<meta property="og:site_name" content="元芳你怎么看">
+<meta property="og:description" content="前言GDB 的全称是 GNU Debugger “Caveman debugging” 这个词语的使用是一种夸张和幽默的说法，强调了使用最基本工具进行调试的原始感觉，好像程序员是在用石器时代的工具一样。不要只会最简单的调试，掌握更切近实际的高效技巧会为你调试工作带来不小的便利。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-12-04T09:18:39.000Z">
+<meta property="article:modified_time" content="2023-12-04T09:28:09.871Z">
+<meta property="article:author" content="zhendewokusi">
+<meta property="article:tag" content="GDB">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://zhendewokusi.github.io/2023/12/04/Learn-DGB/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Learn DGB | 元芳你怎么看</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">元芳你怎么看</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">本网站主要用于记录我个人学习的内容,希望对你有所帮助</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/zhendewokusi" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhendewokusi.github.io/2023/12/04/Learn-DGB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhendewokusi">
+      <meta itemprop="description" content="琼楼挂月钓流云，梦里瑶台暂借春">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="元芳你怎么看">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Learn DGB
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2023-12-04 17:18:39 / 修改时间：17:28:09" itemprop="dateCreated datePublished" datetime="2023-12-04T17:18:39+08:00">2023-12-04</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p><code>GDB 的全称是 GNU Debugger</code></p>
+<p>“Caveman debugging” 这个词语的使用是一种夸张和幽默的说法，强调了使用最基本工具进行调试的原始感觉，好像程序员是在用石器时代的工具一样。不要只会最简单的调试，掌握更切近实际的高效技巧会为你调试工作带来不小的便利。</p>
+<span id="more"></span>
+
+<h2 id="练习"><a href="#练习" class="headerlink" title="练习"></a>练习</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd yourworkspace</span><br><span class="line">git clone --depth=1 git@github.com:zhendewokusi/Basic_GDB.git</span><br></pre></td></tr></table></figure>
+
+<p>如果你有一定C语言基础，且对gdb的基本使用还不怎么熟练，可以克隆下面仓库，里面有很多代码用以练手，本篇文章的<code>markdown</code>文件也在里面。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">编译举例</span></span><br><span class="line">gcc basic1.c -g3 -o basic1</span><br></pre></td></tr></table></figure>
+
+<h1 id="GDB基本命令"><a href="#GDB基本命令" class="headerlink" title="GDB基本命令"></a>GDB基本命令</h1><p>b（break的缩写）命令在main()函数入口设置断点</p>
+<p>r（run的缩写）命令开始执行程序，程序执行到main函数时，触发断点。</p>
+<p>n（next的缩写）命令进行单步执行。</p>
+<p>s（step的缩写）：单步调试如果有函数调用，则进入函数；与命令n不同，n是不进入调用的函数的</p>
+<p>函数完成返回，并打印函数返回时的堆栈地址和返回值及参数值等信息。</p>
+<p>watch 表达式：设置一个监视点，一旦被监视的“表达式”的值改变，gdb将强行终止正在被调试的程序。如： <code>watch a</code><br>    rwatch awatch</p>
+<p>x&#x2F;p:x 命令用于查看内存中的数据，而 &#x2F;p 是其中的一种输出格式选项之一。</p>
+<p>where&#x2F;bt ：当前运行的堆栈列表</p>
+<p>call:用于在调试会话中调用一个函数，从而可以直接查看函数的返回值或执行一些函数内的操作。</p>
+<p>up&#x2F;down&#x2F;frame:</p>
+<ol>
+<li><p><strong>up命令：</strong></p>
+<ul>
+<li>用法：<code>up [count]</code></li>
+<li>作用：将当前调用堆栈帧上移 <code>count</code> 个帧。如果没有提供 <code>count</code>，则默认上移一个帧。每个帧对应于一个函数调用。</li>
+</ul>
+</li>
+<li><p><strong>down命令：</strong></p>
+<ul>
+<li>用法：<code>down [count]</code></li>
+<li>作用：将当前调用堆栈帧下移 <code>count</code> 个帧。如果没有提供 <code>count</code>，则默认下移一个帧。</li>
+</ul>
+</li>
+<li><p><strong>frame命令：</strong></p>
+<ul>
+<li>用法：<code>frame [frame-number]</code></li>
+<li>作用：选择调用堆栈中的特定帧。</li>
+</ul>
+</li>
+</ol>
+<ul>
+<li>分割窗口:<br>layout：用于分割窗口，可以一边查看代码，一边测试：<br>layout src：显示源代码窗口<br>layout asm：显示反汇编窗口<br>layout regs：显示源代码&#x2F;反汇编和CPU寄存器窗口<br>layout split：显示源代码和反汇编窗口<br>Ctrl + L：刷新窗口<br>winheight:改变窗口高度</li>
+</ul>
+<p>info :看断点信息，局部变量等等</p>
+<p>command &#x2F; condition:</p>
+<ol>
+<li><strong><code>command</code> 命令：</strong><ul>
+<li><p><code>command</code> 命令允许你定义一个自定义 GDB 命令，该命令可以包含一系列 GDB 命令，这些命令将在程序执行时被执行。</p>
+</li>
+<li><p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">command</span> [COUNT] [SHELL-COMMANDS]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>COUNT</code> 表示该命令在程序执行多少次后将被删除。如果省略 <code>COUNT</code>，则该命令会一直存在。</li>
+<li><code>SHELL-COMMANDS</code> 是在达到断点时要执行的 GDB 命令列表。</li>
+</ul>
+</li>
+<li><p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(gdb) <span class="built_in">break</span> 10</span><br><span class="line">(gdb) <span class="built_in">command</span> 3</span><br><span class="line">&gt; silent</span><br><span class="line">&gt; <span class="built_in">printf</span> <span class="string">&quot;At line %d\n&quot;</span>, __LINE__</span><br><span class="line">&gt; <span class="built_in">continue</span></span><br><span class="line">&gt; end</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ol>
+<p>save breakpoints file_name</p>
+<ol start="2">
+<li><strong><code>condition</code> 命令：</strong><ul>
+<li><p><code>condition</code> 命令用于设置断点的条件。这意味着，只有在满足指定条件时，断点才会中断程序执行。</p>
+</li>
+<li><p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">condition BREAKPOINT-NUMBER EXPRESSION</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>BREAKPOINT-NUMBER</code> 是断点的编号。</li>
+<li><code>EXPRESSION</code> 是一个表达式，如果该表达式的值为真（非零），则断点会中断程序执行。</li>
+</ul>
+</li>
+<li><p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(gdb) <span class="built_in">break</span> 20</span><br><span class="line">(gdb) condition 1 i == 5</span><br></pre></td></tr></table></figure>
+
+<p>这将在程序执行到第 20 行时，只有当变量 <code>i</code> 的值等于 5 时，才会中断程序执行。</p>
+</li>
+</ul>
+</li>
+</ol>
+<p>until:直到多少行，哪个函数….</p>
+<p>tbreak:临时断点</p>
+<h1 id="GDB打印复杂数据结构"><a href="#GDB打印复杂数据结构" class="headerlink" title="GDB打印复杂数据结构"></a>GDB打印复杂数据结构</h1><p>正常数据结构太难看，让它输出好看点<br><code>.gdbinit</code>文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set print pretty on</span><br><span class="line">set print array-indexes on</span><br></pre></td></tr></table></figure>
+
+<h1 id="宏定义"><a href="#宏定义" class="headerlink" title="宏定义"></a>宏定义</h1><p>GCC的调试选项 -g<br>我们知道，要想用GDB进行调试，必须在用GCC编译时加上“-g”选项。但很多童鞋可能不知道的是，和优化选项“-Ox”一样，调试选项“-g”也有几个等级可选：</p>
+<p>-g 默认选项，同-g2</p>
+<p>-g0 不生成任何调试信息，和编译时不加“-g”是一样的。</p>
+<p>-g1 生成最少量的调试信息，这些信息足够用来通过backtrace查看调用栈符号信息。主要包括了函数声明、外部变量和行号等信息，但是不包含局部变量信息。这个选项比较少用。</p>
+<p>-g2 生成足够多的调试信息，可以用GDB进行正常的程序调试，这个是默认选项。</p>
+<p>-g3 在-g2的基础上产生更多的信息，如宏定义。</p>
+<p>可见，我们编译时加的“-g”选项，其实等同于“-g2”，它产生了足够多的调试信息，我们可以用gdb查看调用栈、查看局部变量等。但是，要想查看宏定义，则必须要使用“-g3”选项。</p>
+<p>开<code>g3</code>才能输出宏</p>
+<h1 id="GDB-Dynamic-Printf"><a href="#GDB-Dynamic-Printf" class="headerlink" title="GDB Dynamic Printf"></a>GDB Dynamic Printf</h1><p>问题：</p>
+<ul>
+<li><p>代码添加打印信息进行调试，突然发现添加打印的位置不对，或者别的地方也需要添加打印信息。</p>
+</li>
+<li><p>于是，重新修改源码，重新添加打印，重新编译，重新部署，重新运行，重新调试，重新分析。</p>
+</li>
+<li><p>当我们费了九牛二虎之力把这些都弄好之后，很不幸地又发现了新的问题，然后不得不反复进行这些过程。<br>误而崩溃，GDB 会在进程终止后无法再执行 call 命令。你需要在程序崩溃之前设置调试信息，还必须从程序中删除掉。</p>
+</li>
+</ul>
+<p>上面问题你或许可以克服，新的问题：大型项目printf太麻烦，编译时间太久。还要修改源码。</p>
+<p>那么，有没有一种方法，既不需要修改源码，又能随时在程序中任何地方任意添加打印信息呢？</p>
+<p>设置动态打印的命令是dprintf，格式如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dprintf location,format string,arg1,arg2,...</span><br></pre></td></tr></table></figure>
+
+<p>dprintf命令和C语言中的printf的用法很相似，支持格式化打印。</p>
+<p>相比printf函数，dprintf命令多了一个location参数，用于指定动态打印被触发的位置。</p>
+<p>和break命令设置断点时一样，location可以是文件名:行号、函数名、或者具体的地址等。</p>
+<p>除了location外，剩余的几个参数，就和printf()函数一致了。format指定字符串打印的格式，后面几个参数指定打印的数据来源。</p>
+<h2 id="保存断点信息"><a href="#保存断点信息" class="headerlink" title="保存断点信息"></a>保存断点信息</h2><p>为了解决上面提到的问题，GDB很贴心地提供了对断点信息保存和加载的功能。</p>
+<p>GDB中，可以把当前所设置的各种类型的断点信息全部保存在一个脚本文件中。这其中当然也包括dprintf设置的动态打印信息。</p>
+<p>只需要执行下面的命令即可：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">save breakpoints file_name</span><br></pre></td></tr></table></figure>
+<p>这条命令会把当前所有的断点信息都保存在file_name指定的文件中。</p>
+<p>等下次进行调试时，可以把file_name文件中的断点信息重新加载起来。有两种方法：</p>
+<ol>
+<li><p>启动GDB时使用“-x file_name”参数。</p>
+</li>
+<li><p>在GDB中执行source file_name命令。</p>
+</li>
+</ol>
+<p>gdb后加<code>-x</code>加<code>file_name</code>加载断点信息。</p>
+<h1 id="GDB-Dynamic-Printf-多余吗"><a href="#GDB-Dynamic-Printf-多余吗" class="headerlink" title="GDB Dynamic Printf 多余吗?"></a>GDB Dynamic Printf 多余吗?</h1><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;signal.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> global = <span class="number">6</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">alarm_handler</span><span class="params">()</span> &#123;</span><br><span class="line">    global++;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc,<span class="type">char</span>* argv[])</span> &#123;</span><br><span class="line">    <span class="type">int</span> a,b,c;</span><br><span class="line"></span><br><span class="line">    signal(SIGALRM, alarm_handler);</span><br><span class="line">    alarm(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    a = <span class="number">9</span>;</span><br><span class="line">    b = <span class="number">9</span>;</span><br><span class="line">    c = <span class="number">6</span>;</span><br><span class="line"></span><br><span class="line">    c = (a + b) / (global - c);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="普通断点的问题"><a href="#普通断点的问题" class="headerlink" title="普通断点的问题"></a>普通断点的问题</h2><p>我们前面尝试了单步执行，以及直接在第23行设置断点并打印变量的方式，可程序都能够正常执行结束，浮点异常错误无法重现。</p>
+<p>这两种方式存在的共同问题是，<strong>在程序触发断点后，需要和用户进行交互，用户必须手动输入命令并恢复程序的执行。而和用户交互，势必引入延迟。</strong></p>
+<p>实际上，无论是单步执行，还是在断点触发后打印a、b、c、global_variable的值，都无法b保证程序在在1秒钟内执行完毕。因此，第17行设置的闹钟就会到期。</p>
+<p><strong>尽管我们用GDB调试程序时，被调试程序本身的执行被暂时停止，但是alarm函数设置的闹钟是由底层OS内核提供的服务。无论我们的程序执行是否被暂停，OS内核仍然会在设置的闹钟到期后，向应用程序发送SIGALRM信号。</strong></p>
+<p>如此以来，无论我们是用step命令还是continue命令恢复程序执行，程序都会首先处理SIGALRM信号，然后才去执行接下来的代码。</p>
+<p>在SIGALRM的处理函数alarm_handler()中，会把global_variable加1，它的值变成了5,。接下来执行第23行代码时，global_variable - c的值就变成了1，当然不会再触发除零错误了。</p>
+<p>接下来，我们用GDB的动态打印功能来调试一下。</p>
+<h1 id="反向调试"><a href="#反向调试" class="headerlink" title="反向调试"></a>反向调试</h1><p>反向调试技术的核心原理，简单来说，是在程序运行中，记录每一条指令对程序执行的所有状态变化，包括变量、寄存器、内存的数据变化等，并将这些信息存储在一个history文件中。当需要回溯到过去的状态时，调试器会按照相反的顺序逐条指令恢复这些状态，使得程序的执行状态回到已经被记录的任意时间点。</p>
+<ul>
+<li>reverse-next(rc): 参考next(n), 逆向执行一行代码，遇函数调用不进入</li>
+<li>reverse-nexti(rni): 参考nexti(ni), 逆向执行一条指令，与函数调用不进入</li>
+<li>reverse-step(rs): 参考step(s), 逆向执行一行代码，遇函数调用则进入</li>
+<li>reverse-stepi(rsi): 参考setpi(si)， 逆向执行一条指令，与函数调用则进入</li>
+<li>reverse-continue(rc): 参考continue(c), 逆向继续执行</li>
+<li>reverse-finish: 参考finish，逆向执行，一直到函数入口处</li>
+<li>reverse-search(): 参考search，逆向搜索</li>
+<li>set exec-direction reverse: 设置程序逆向执行，执行完此命令后，所有常用命令如next, nexti, step, stepi, continue、finish等全部都变成逆向执行</li>
+<li>set exec-direction forward: 设置程序正向执行，这也是默认的设置</li>
+</ul>
+<p><strong>在绝大多数环境下，在使用这些反向调试命令之前，必须要先通过record命令让GDB把程序执行过程中的所有状态信息全部记录下来。通常是在程序运行起来之后，先设置断点让让程序停下来，然后输入record命令，开启状态信息记录，然后再继续执行。</strong></p>
+<ul>
+<li>record: 记录程序执行过程中所有状态信息</li>
+<li>record stop: 停止记录状态信息</li>
+<li>record goto: 让程序跳转到指定的位置, 如record goto start、record goto end、record goto n</li>
+<li>record save filename: 把程序执行历史状态信息保存到文件，默认名字是gdb_record.process_id</li>
+<li>record restore filename: 从历史记录文件中恢复状态信息</li>
+<li>show record full insn-number-max：查看可以记录执行状态信息的最大指令个数，默认是200000</li>
+<li>set record full insn-number-max limit：设置可以记录执行状态信息的最大指令个数</li>
+<li>set record full insn-number-max unlimited：记录所有指令的执行状态信息</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/GDB/" rel="tag"># GDB</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/18/%E4%B8%AD%E6%96%AD%E5%92%8C%E5%8A%A8%E6%80%81%E6%97%B6%E9%92%9F%E6%98%BE%E7%A4%BA/" rel="prev" title="中断和动态时钟显示">
+      <i class="fa fa-chevron-left"></i> 中断和动态时钟显示
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%83%E4%B9%A0"><span class="nav-number">1.1.</span> <span class="nav-text">练习</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GDB%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4"><span class="nav-number">2.</span> <span class="nav-text">GDB基本命令</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GDB%E6%89%93%E5%8D%B0%E5%A4%8D%E6%9D%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">3.</span> <span class="nav-text">GDB打印复杂数据结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%8F%E5%AE%9A%E4%B9%89"><span class="nav-number">4.</span> <span class="nav-text">宏定义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GDB-Dynamic-Printf"><span class="nav-number">5.</span> <span class="nav-text">GDB Dynamic Printf</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%9D%E5%AD%98%E6%96%AD%E7%82%B9%E4%BF%A1%E6%81%AF"><span class="nav-number">5.1.</span> <span class="nav-text">保存断点信息</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GDB-Dynamic-Printf-%E5%A4%9A%E4%BD%99%E5%90%97"><span class="nav-number">6.</span> <span class="nav-text">GDB Dynamic Printf 多余吗?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%99%AE%E9%80%9A%E6%96%AD%E7%82%B9%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">6.1.</span> <span class="nav-text">普通断点的问题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%8D%E5%90%91%E8%B0%83%E8%AF%95"><span class="nav-number">7.</span> <span class="nav-text">反向调试</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="zhendewokusi"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">zhendewokusi</p>
+  <div class="site-description" itemprop="description">琼楼挂月钓流云，梦里瑶台暂借春</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zhendewokusi" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zhendewokusi" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:768672249@qq.com" title="E-Mail → mailto:768672249@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zhendewokusi</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/pangu@4/dist/browser/pangu.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+  <script async src="/js/love.min.js"></script>
+
+    </div>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/wanko.model.json"},"display":{"position":"left","width":100,"height":200},"mobile":{"show":false},"log":false});</script></body>
+</html>

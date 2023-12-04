@@ -1,6 +1,171 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Learn DGB</title>
+    <url>/2023/12/04/Learn-DGB/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p><code>GDB 的全称是 GNU Debugger</code></p>
+<p>“Caveman debugging” 这个词语的使用是一种夸张和幽默的说法，强调了使用最基本工具进行调试的原始感觉，好像程序员是在用石器时代的工具一样。不要只会最简单的调试，掌握更切近实际的高效技巧会为你调试工作带来不小的便利。</p>
+<span id="more"></span>
+
+<h2 id="练习"><a href="#练习" class="headerlink" title="练习"></a>练习</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd yourworkspace</span><br><span class="line">git clone --depth=1 git@github.com:zhendewokusi/Basic_GDB.git</span><br></pre></td></tr></table></figure>
+
+<p>如果你有一定C语言基础，且对gdb的基本使用还不怎么熟练，可以克隆下面仓库，里面有很多代码用以练手，本篇文章的<code>markdown</code>文件也在里面。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">编译举例</span></span><br><span class="line">gcc basic1.c -g3 -o basic1</span><br></pre></td></tr></table></figure>
+
+<h1 id="GDB基本命令"><a href="#GDB基本命令" class="headerlink" title="GDB基本命令"></a>GDB基本命令</h1><p>b（break的缩写）命令在main()函数入口设置断点</p>
+<p>r（run的缩写）命令开始执行程序，程序执行到main函数时，触发断点。</p>
+<p>n（next的缩写）命令进行单步执行。</p>
+<p>s（step的缩写）：单步调试如果有函数调用，则进入函数；与命令n不同，n是不进入调用的函数的</p>
+<p>函数完成返回，并打印函数返回时的堆栈地址和返回值及参数值等信息。</p>
+<p>watch 表达式：设置一个监视点，一旦被监视的“表达式”的值改变，gdb将强行终止正在被调试的程序。如： <code>watch a</code><br>    rwatch awatch</p>
+<p>x&#x2F;p:x 命令用于查看内存中的数据，而 &#x2F;p 是其中的一种输出格式选项之一。</p>
+<p>where&#x2F;bt ：当前运行的堆栈列表</p>
+<p>call:用于在调试会话中调用一个函数，从而可以直接查看函数的返回值或执行一些函数内的操作。</p>
+<p>up&#x2F;down&#x2F;frame:</p>
+<ol>
+<li><p><strong>up命令：</strong></p>
+<ul>
+<li>用法：<code>up [count]</code></li>
+<li>作用：将当前调用堆栈帧上移 <code>count</code> 个帧。如果没有提供 <code>count</code>，则默认上移一个帧。每个帧对应于一个函数调用。</li>
+</ul>
+</li>
+<li><p><strong>down命令：</strong></p>
+<ul>
+<li>用法：<code>down [count]</code></li>
+<li>作用：将当前调用堆栈帧下移 <code>count</code> 个帧。如果没有提供 <code>count</code>，则默认下移一个帧。</li>
+</ul>
+</li>
+<li><p><strong>frame命令：</strong></p>
+<ul>
+<li>用法：<code>frame [frame-number]</code></li>
+<li>作用：选择调用堆栈中的特定帧。</li>
+</ul>
+</li>
+</ol>
+<ul>
+<li>分割窗口:<br>layout：用于分割窗口，可以一边查看代码，一边测试：<br>layout src：显示源代码窗口<br>layout asm：显示反汇编窗口<br>layout regs：显示源代码&#x2F;反汇编和CPU寄存器窗口<br>layout split：显示源代码和反汇编窗口<br>Ctrl + L：刷新窗口<br>winheight:改变窗口高度</li>
+</ul>
+<p>info :看断点信息，局部变量等等</p>
+<p>command &#x2F; condition:</p>
+<ol>
+<li><strong><code>command</code> 命令：</strong><ul>
+<li><p><code>command</code> 命令允许你定义一个自定义 GDB 命令，该命令可以包含一系列 GDB 命令，这些命令将在程序执行时被执行。</p>
+</li>
+<li><p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">command</span> [COUNT] [SHELL-COMMANDS]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>COUNT</code> 表示该命令在程序执行多少次后将被删除。如果省略 <code>COUNT</code>，则该命令会一直存在。</li>
+<li><code>SHELL-COMMANDS</code> 是在达到断点时要执行的 GDB 命令列表。</li>
+</ul>
+</li>
+<li><p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">(gdb) <span class="built_in">break</span> 10</span><br><span class="line">(gdb) <span class="built_in">command</span> 3</span><br><span class="line">&gt; silent</span><br><span class="line">&gt; <span class="built_in">printf</span> <span class="string">&quot;At line %d\n&quot;</span>, __LINE__</span><br><span class="line">&gt; <span class="built_in">continue</span></span><br><span class="line">&gt; end</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ol>
+<p>save breakpoints file_name</p>
+<ol start="2">
+<li><strong><code>condition</code> 命令：</strong><ul>
+<li><p><code>condition</code> 命令用于设置断点的条件。这意味着，只有在满足指定条件时，断点才会中断程序执行。</p>
+</li>
+<li><p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">condition BREAKPOINT-NUMBER EXPRESSION</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>BREAKPOINT-NUMBER</code> 是断点的编号。</li>
+<li><code>EXPRESSION</code> 是一个表达式，如果该表达式的值为真（非零），则断点会中断程序执行。</li>
+</ul>
+</li>
+<li><p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">(gdb) <span class="built_in">break</span> 20</span><br><span class="line">(gdb) condition 1 i == 5</span><br></pre></td></tr></table></figure>
+
+<p>这将在程序执行到第 20 行时，只有当变量 <code>i</code> 的值等于 5 时，才会中断程序执行。</p>
+</li>
+</ul>
+</li>
+</ol>
+<p>until:直到多少行，哪个函数….</p>
+<p>tbreak:临时断点</p>
+<h1 id="GDB打印复杂数据结构"><a href="#GDB打印复杂数据结构" class="headerlink" title="GDB打印复杂数据结构"></a>GDB打印复杂数据结构</h1><p>正常数据结构太难看，让它输出好看点<br><code>.gdbinit</code>文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set print pretty on</span><br><span class="line">set print array-indexes on</span><br></pre></td></tr></table></figure>
+
+<h1 id="宏定义"><a href="#宏定义" class="headerlink" title="宏定义"></a>宏定义</h1><p>GCC的调试选项 -g<br>我们知道，要想用GDB进行调试，必须在用GCC编译时加上“-g”选项。但很多童鞋可能不知道的是，和优化选项“-Ox”一样，调试选项“-g”也有几个等级可选：</p>
+<p>-g 默认选项，同-g2</p>
+<p>-g0 不生成任何调试信息，和编译时不加“-g”是一样的。</p>
+<p>-g1 生成最少量的调试信息，这些信息足够用来通过backtrace查看调用栈符号信息。主要包括了函数声明、外部变量和行号等信息，但是不包含局部变量信息。这个选项比较少用。</p>
+<p>-g2 生成足够多的调试信息，可以用GDB进行正常的程序调试，这个是默认选项。</p>
+<p>-g3 在-g2的基础上产生更多的信息，如宏定义。</p>
+<p>可见，我们编译时加的“-g”选项，其实等同于“-g2”，它产生了足够多的调试信息，我们可以用gdb查看调用栈、查看局部变量等。但是，要想查看宏定义，则必须要使用“-g3”选项。</p>
+<p>开<code>g3</code>才能输出宏</p>
+<h1 id="GDB-Dynamic-Printf"><a href="#GDB-Dynamic-Printf" class="headerlink" title="GDB Dynamic Printf"></a>GDB Dynamic Printf</h1><p>问题：</p>
+<ul>
+<li><p>代码添加打印信息进行调试，突然发现添加打印的位置不对，或者别的地方也需要添加打印信息。</p>
+</li>
+<li><p>于是，重新修改源码，重新添加打印，重新编译，重新部署，重新运行，重新调试，重新分析。</p>
+</li>
+<li><p>当我们费了九牛二虎之力把这些都弄好之后，很不幸地又发现了新的问题，然后不得不反复进行这些过程。<br>误而崩溃，GDB 会在进程终止后无法再执行 call 命令。你需要在程序崩溃之前设置调试信息，还必须从程序中删除掉。</p>
+</li>
+</ul>
+<p>上面问题你或许可以克服，新的问题：大型项目printf太麻烦，编译时间太久。还要修改源码。</p>
+<p>那么，有没有一种方法，既不需要修改源码，又能随时在程序中任何地方任意添加打印信息呢？</p>
+<p>设置动态打印的命令是dprintf，格式如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">dprintf location,format string,arg1,arg2,...</span><br></pre></td></tr></table></figure>
+
+<p>dprintf命令和C语言中的printf的用法很相似，支持格式化打印。</p>
+<p>相比printf函数，dprintf命令多了一个location参数，用于指定动态打印被触发的位置。</p>
+<p>和break命令设置断点时一样，location可以是文件名:行号、函数名、或者具体的地址等。</p>
+<p>除了location外，剩余的几个参数，就和printf()函数一致了。format指定字符串打印的格式，后面几个参数指定打印的数据来源。</p>
+<h2 id="保存断点信息"><a href="#保存断点信息" class="headerlink" title="保存断点信息"></a>保存断点信息</h2><p>为了解决上面提到的问题，GDB很贴心地提供了对断点信息保存和加载的功能。</p>
+<p>GDB中，可以把当前所设置的各种类型的断点信息全部保存在一个脚本文件中。这其中当然也包括dprintf设置的动态打印信息。</p>
+<p>只需要执行下面的命令即可：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">save breakpoints file_name</span><br></pre></td></tr></table></figure>
+<p>这条命令会把当前所有的断点信息都保存在file_name指定的文件中。</p>
+<p>等下次进行调试时，可以把file_name文件中的断点信息重新加载起来。有两种方法：</p>
+<ol>
+<li><p>启动GDB时使用“-x file_name”参数。</p>
+</li>
+<li><p>在GDB中执行source file_name命令。</p>
+</li>
+</ol>
+<p>gdb后加<code>-x</code>加<code>file_name</code>加载断点信息。</p>
+<h1 id="GDB-Dynamic-Printf-多余吗"><a href="#GDB-Dynamic-Printf-多余吗" class="headerlink" title="GDB Dynamic Printf 多余吗?"></a>GDB Dynamic Printf 多余吗?</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;signal.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> global = <span class="number">6</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">alarm_handler</span><span class="params">()</span> &#123;</span><br><span class="line">    global++;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc,<span class="type">char</span>* argv[])</span> &#123;</span><br><span class="line">    <span class="type">int</span> a,b,c;</span><br><span class="line"></span><br><span class="line">    signal(SIGALRM, alarm_handler);</span><br><span class="line">    alarm(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    a = <span class="number">9</span>;</span><br><span class="line">    b = <span class="number">9</span>;</span><br><span class="line">    c = <span class="number">6</span>;</span><br><span class="line"></span><br><span class="line">    c = (a + b) / (global - c);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="普通断点的问题"><a href="#普通断点的问题" class="headerlink" title="普通断点的问题"></a>普通断点的问题</h2><p>我们前面尝试了单步执行，以及直接在第23行设置断点并打印变量的方式，可程序都能够正常执行结束，浮点异常错误无法重现。</p>
+<p>这两种方式存在的共同问题是，<strong>在程序触发断点后，需要和用户进行交互，用户必须手动输入命令并恢复程序的执行。而和用户交互，势必引入延迟。</strong></p>
+<p>实际上，无论是单步执行，还是在断点触发后打印a、b、c、global_variable的值，都无法b保证程序在在1秒钟内执行完毕。因此，第17行设置的闹钟就会到期。</p>
+<p><strong>尽管我们用GDB调试程序时，被调试程序本身的执行被暂时停止，但是alarm函数设置的闹钟是由底层OS内核提供的服务。无论我们的程序执行是否被暂停，OS内核仍然会在设置的闹钟到期后，向应用程序发送SIGALRM信号。</strong></p>
+<p>如此以来，无论我们是用step命令还是continue命令恢复程序执行，程序都会首先处理SIGALRM信号，然后才去执行接下来的代码。</p>
+<p>在SIGALRM的处理函数alarm_handler()中，会把global_variable加1，它的值变成了5,。接下来执行第23行代码时，global_variable - c的值就变成了1，当然不会再触发除零错误了。</p>
+<p>接下来，我们用GDB的动态打印功能来调试一下。</p>
+<h1 id="反向调试"><a href="#反向调试" class="headerlink" title="反向调试"></a>反向调试</h1><p>反向调试技术的核心原理，简单来说，是在程序运行中，记录每一条指令对程序执行的所有状态变化，包括变量、寄存器、内存的数据变化等，并将这些信息存储在一个history文件中。当需要回溯到过去的状态时，调试器会按照相反的顺序逐条指令恢复这些状态，使得程序的执行状态回到已经被记录的任意时间点。</p>
+<ul>
+<li>reverse-next(rc): 参考next(n), 逆向执行一行代码，遇函数调用不进入</li>
+<li>reverse-nexti(rni): 参考nexti(ni), 逆向执行一条指令，与函数调用不进入</li>
+<li>reverse-step(rs): 参考step(s), 逆向执行一行代码，遇函数调用则进入</li>
+<li>reverse-stepi(rsi): 参考setpi(si)， 逆向执行一条指令，与函数调用则进入</li>
+<li>reverse-continue(rc): 参考continue(c), 逆向继续执行</li>
+<li>reverse-finish: 参考finish，逆向执行，一直到函数入口处</li>
+<li>reverse-search(): 参考search，逆向搜索</li>
+<li>set exec-direction reverse: 设置程序逆向执行，执行完此命令后，所有常用命令如next, nexti, step, stepi, continue、finish等全部都变成逆向执行</li>
+<li>set exec-direction forward: 设置程序正向执行，这也是默认的设置</li>
+</ul>
+<p><strong>在绝大多数环境下，在使用这些反向调试命令之前，必须要先通过record命令让GDB把程序执行过程中的所有状态信息全部记录下来。通常是在程序运行起来之后，先设置断点让让程序停下来，然后输入record命令，开启状态信息记录，然后再继续执行。</strong></p>
+<ul>
+<li>record: 记录程序执行过程中所有状态信息</li>
+<li>record stop: 停止记录状态信息</li>
+<li>record goto: 让程序跳转到指定的位置, 如record goto start、record goto end、record goto n</li>
+<li>record save filename: 把程序执行历史状态信息保存到文件，默认名字是gdb_record.process_id</li>
+<li>record restore filename: 从历史记录文件中恢复状态信息</li>
+<li>show record full insn-number-max：查看可以记录执行状态信息的最大指令个数，默认是200000</li>
+<li>set record full insn-number-max limit：设置可以记录执行状态信息的最大指令个数</li>
+<li>set record full insn-number-max unlimited：记录所有指令的执行状态信息</li>
+</ul>
+]]></content>
+      <tags>
+        <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2023/10/02/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.<span id="more"></span></p>
@@ -444,45 +609,6 @@
       </tags>
   </entry>
   <entry>
-    <title>条款23：理解std::move 和 std::forward</title>
-    <url>/2023/10/09/%E6%9D%A1%E6%AC%BE23/</url>
-    <content><![CDATA[<h3 id="须知"><a href="#须知" class="headerlink" title="须知"></a>须知</h3><p><code>std::move</code> 不做任何移动， <code>std::forward</code> 不做任何转发。它们在运行的时候什么都没干。<br>它们两个都只做了<strong>强制类型转换</strong>，<code>std::move</code> 无条件将实参强制转换成右值，<code>std::forward</code> 是有条件的执行强制类型转换。</p>
-<span id="more"></span>
-<h3 id="std-move"><a href="#std-move" class="headerlink" title="std::move"></a>std::move</h3><p>我们来看一看<code>c++11</code>中std::move的示例实现:</p>
-<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">typename</span> std::remove_reference&lt;T&gt;::<span class="function">type&amp;&amp; <span class="title">move</span><span class="params">(T&amp;&amp; param)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">using</span> ReturnType = <span class="keyword">typename</span> std::remove_reference&lt;T&gt;::type&amp;&amp;;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">static_cast</span>&lt;ReturnType&gt;(param);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里也和条款9呼应，也就是别名声明(<code>using</code>)压倒<code>typedef</code>的优势：支持模板化！而<code>typedef</code>需要结构体来辅助完成同样功能。如果我们要使用<code>typedef</code>来实现同样的功能的话，代码如下：</p>
-<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">StructReturnType</span> &#123;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::remove_reference&lt;T&gt;::type&amp;&amp; type;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">typename</span> std::remove_reference&lt;T&gt;::<span class="function">type&amp;&amp; <span class="title">move</span><span class="params">(T&amp;&amp; param)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;<span class="keyword">typename</span> StructReturnType&lt;T&gt;::type&gt;(param);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>如果是<code>c++14</code>，有了返回值型别推导，实现<code>std::move</code>就更加方便：</p>
-<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) <span class="title">move</span><span class="params">(T&amp;&amp; param)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">using</span> ReturnType = std::<span class="type">remove_reference_t</span>&lt;T&gt;&amp;&amp;;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">static_cast</span>&lt;ReturnType&gt;(param);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span> x = <span class="number">42</span>;</span><br><span class="line">    <span class="type">int</span>&amp; x_ref = x;</span><br><span class="line">    <span class="type">int</span>&amp;&amp; rvalue_ref_1 = <span class="built_in">move</span>(x);       <span class="comment">//编译通过，说明强制转换成功</span></span><br><span class="line">    <span class="type">int</span>&amp;&amp; rvalue_ref_2 = <span class="built_in">move</span>(x_ref);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><code>std::move</code><strong>只做强制类型转换，不做移动</strong>。当然右值是可以实施移动的，所以一个对象实施了<code>std::move</code>后就告诉编译器该对象可能具备移动的条件。为什么是可能呢？通常情况下的确没有问题，具备移动的条件。看下面这个例子：</p>
-<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Entity</span>&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">Entity</span><span class="params">(std::string tmp)</span></span>;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>这里的<code>explicit</code> 是一个关键字，通常用于类的构造函数声明中，用于阻止隐式类型转换。当一个构造函数被标记为 <code>explicit</code> 时，它告诉编译器不要执行隐式类型转换，只有显式调用时才会使用该构造函数。</p>
-<p><code>Entity</code>类的构造函数不需要修改<code>tmp</code>，根据优良传统“只要有可能使用<code>const</code>就使用”，将代码更改成了下面的形式：</p>
-<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Entity</span>&#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    std::string value;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">Entity</span><span class="params">(<span class="type">const</span> std::string tmp)</span></span></span><br><span class="line"><span class="function">    : value(std::move(tmp))&#123;</span>&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>代码顺利运行，但是<code>tmp</code>是被复制近<code>value</code>的，而不是移动。<code>std::move(tmp)</code>后结果是右值<code>const std::string</code>，常量性保留下来了。<br>可以浅浅的看一下string的头文件:</p>
-<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line">   <span class="comment">//string 文件</span></span><br><span class="line">   <span class="keyword">using</span> string    = basic_string&lt;<span class="type">char</span>&gt;;</span><br><span class="line"></span><br><span class="line">   <span class="comment">//basic_string.h 文件</span></span><br><span class="line"></span><br><span class="line">   <span class="comment">//复制构造函数</span></span><br><span class="line">   <span class="built_in">basic_string</span>(<span class="type">const</span> basic_string&amp; __str)</span><br><span class="line">     : _M_dataplus(_M_local_data(),</span><br><span class="line">	    _Alloc_traits::_S_select_on_copy(__str._M_get_allocator()))</span><br><span class="line">     &#123;</span><br><span class="line">_M_construct(__str._M_data(), __str._M_data() + __str.<span class="built_in">length</span>(),</span><br><span class="line">	     std::forward_iterator_tag());</span><br><span class="line">     &#125;</span><br><span class="line">   </span><br><span class="line">   <span class="comment">//移动构造函数</span></span><br><span class="line">   <span class="built_in">basic_string</span>(basic_string&amp;&amp; __str) <span class="keyword">noexcept</span></span><br><span class="line">     : _M_dataplus(_M_local_data(), std::<span class="built_in">move</span>(__str._M_get_allocator()))</span><br><span class="line">     &#123;</span><br><span class="line"><span class="keyword">if</span> (__str._M_is_local())</span><br><span class="line">  &#123;</span><br><span class="line">    traits_type::<span class="built_in">copy</span>(_M_local_buf, __str._M_local_buf,</span><br><span class="line">		      __str.<span class="built_in">length</span>() + <span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    _M_data(__str._M_data());</span><br><span class="line">    _M_capacity(__str._M_allocated_capacity);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Must use _M_length() here not _M_set_length() because</span></span><br><span class="line"><span class="comment">// basic_stringbuf relies on writing into unallocated capacity so</span></span><br><span class="line"><span class="comment">// we mess up the contents if we put a &#x27;\0&#x27; in the string.</span></span><br><span class="line">_M_length(__str.<span class="built_in">length</span>());</span><br><span class="line">__str._M_data(__str._M_local_data());</span><br><span class="line">__str._M_set_length(<span class="number">0</span>);</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到移动构造的函数只能接受非常量的<code>string</code>类型的右值引用作为形参。因为指涉到常量的左值引用允许绑定在一个常量右值性别的形参，最终调用的是<code>string</code>的复制构造函数（即使tmp为右值）。</p>
-<p>通过这个例子，我们可以学习到：</p>
-<ul>
-<li>如果想取得对某个对象执行移动操作的能力，不要将其声明为常量。</li>
-<li><code>std::move</code>不能保证强制型别转换的对象具备可移动的能力。</li>
-<li>唯一可以确定的，结果是个右值。</li>
-</ul>
-<h3 id="std-forward"><a href="#std-forward" class="headerlink" title="std::forward"></a>std::forward</h3><p>需要注意的是：传递给 std::forward 的实参型别应当是个非引用型别,因为习惯上它编码的所传递<br>实参应该是个右值(参见条款 28)。<br><code>std::forward</code> 仅仅在特定情况下会实施强制类型转换。最常见的就是某个函数模板取用了万能引用型别作为形参，传递给另一个函数,如下：</p>
-<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">func</span><span class="params">(<span class="type">const</span> Entity&amp; left)</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func</span><span class="params">(Entity&amp;&amp; right)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func2</span><span class="params">(T&amp;&amp; param)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="built_in">func</span>(param);</span><br><span class="line">    <span class="built_in">func</span>(std::forward&lt;T&gt;(param));</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function">std::string <span class="title">str</span><span class="params">(<span class="string">&quot;hello&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">Entity <span class="title">e</span><span class="params">(str)</span></span>;</span><br><span class="line">    <span class="built_in">func2</span>(e);</span><br><span class="line">    <span class="built_in">func2</span>(std::<span class="built_in">move</span>(e));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们希望<code>func2</code>传入的是一个左值时，执行<code>func</code>的左值的版本，传入的是个右值的时候执行<code>func</code>重载的右值的版本。但是函数形参都是左值，也就是说这里的<code>param</code>一直是左值，不论传入<code>func2</code>的是左值还是右值，都只会执行<code>func</code>的左值版本。此时，<code>std::forward</code>就做到了这件事：仅当实参是右值完成初始化的时候才会执行向右值的强制类型转换。</p>
-<p>那么<code>std::forward</code>是如何知道实参是否通过右值来完成初始化的呢？其实是通过传入的函数模板形参<code>T</code>来实现的(详细参见条款 28)。</p>
-]]></content>
-      <tags>
-        <tag>c++</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>条款24:区分万能引用和右值引用</title>
     <url>/2023/10/12/%E6%9D%A1%E6%AC%BE24/</url>
     <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>不是所有的<code>&amp;&amp;</code>都是右值引用！</p>
@@ -521,6 +647,45 @@
 <h4 id="多说一点"><a href="#多说一点" class="headerlink" title="多说一点"></a>多说一点</h4><p>有些人不清楚<code>template&lt;class... Args&gt;</code>中的<code>...</code>是什么，其实很简单，”…” 是用来表示可变参数模板的语法。它用于表示函数或类模板可以接受可变数量的参数。具体来说，<code>Args</code> 是一个参数包，它可以包含零个或多个模板参数。<code>Args&amp;&amp;... args</code> 表示您可以将任意数量的参数传递给 <code>emplace_back</code> 函数，每个参数都会被表示为 <code>Args</code> 类型的右值引用。这种语法通常用于实现”完美转发”。（后面会提到）</p>
 <p>而前面提到的另一种场景,auto声明，在<code>C++11</code>中不怎么普遍。而在<code>C++14</code>中，它现身的机会就更多了，因为<code>C++14</code>中的<code>lambda</code>表达式中可以声明<code>auto&amp;&amp; </code>的形参。</p>
 <h3 id="万能引用的作用"><a href="#万能引用的作用" class="headerlink" title="万能引用的作用"></a>万能引用的作用</h3><p>这种引用在模板编程中非常有用，因为它们能够保持对传递给它们的参数的左值或右值性质，并且可以实现完美转发，使它们适用于各种不同类型的参数。</p>
+]]></content>
+      <tags>
+        <tag>c++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>条款23：理解std::move 和 std::forward</title>
+    <url>/2023/10/09/%E6%9D%A1%E6%AC%BE23/</url>
+    <content><![CDATA[<h3 id="须知"><a href="#须知" class="headerlink" title="须知"></a>须知</h3><p><code>std::move</code> 不做任何移动， <code>std::forward</code> 不做任何转发。它们在运行的时候什么都没干。<br>它们两个都只做了<strong>强制类型转换</strong>，<code>std::move</code> 无条件将实参强制转换成右值，<code>std::forward</code> 是有条件的执行强制类型转换。</p>
+<span id="more"></span>
+<h3 id="std-move"><a href="#std-move" class="headerlink" title="std::move"></a>std::move</h3><p>我们来看一看<code>c++11</code>中std::move的示例实现:</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">typename</span> std::remove_reference&lt;T&gt;::<span class="function">type&amp;&amp; <span class="title">move</span><span class="params">(T&amp;&amp; param)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">using</span> ReturnType = <span class="keyword">typename</span> std::remove_reference&lt;T&gt;::type&amp;&amp;;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">static_cast</span>&lt;ReturnType&gt;(param);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里也和条款9呼应，也就是别名声明(<code>using</code>)压倒<code>typedef</code>的优势：支持模板化！而<code>typedef</code>需要结构体来辅助完成同样功能。如果我们要使用<code>typedef</code>来实现同样的功能的话，代码如下：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">StructReturnType</span> &#123;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::remove_reference&lt;T&gt;::type&amp;&amp; type;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">typename</span> std::remove_reference&lt;T&gt;::<span class="function">type&amp;&amp; <span class="title">move</span><span class="params">(T&amp;&amp; param)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;<span class="keyword">typename</span> StructReturnType&lt;T&gt;::type&gt;(param);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>如果是<code>c++14</code>，有了返回值型别推导，实现<code>std::move</code>就更加方便：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) <span class="title">move</span><span class="params">(T&amp;&amp; param)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">using</span> ReturnType = std::<span class="type">remove_reference_t</span>&lt;T&gt;&amp;&amp;;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">static_cast</span>&lt;ReturnType&gt;(param);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span> x = <span class="number">42</span>;</span><br><span class="line">    <span class="type">int</span>&amp; x_ref = x;</span><br><span class="line">    <span class="type">int</span>&amp;&amp; rvalue_ref_1 = <span class="built_in">move</span>(x);       <span class="comment">//编译通过，说明强制转换成功</span></span><br><span class="line">    <span class="type">int</span>&amp;&amp; rvalue_ref_2 = <span class="built_in">move</span>(x_ref);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>std::move</code><strong>只做强制类型转换，不做移动</strong>。当然右值是可以实施移动的，所以一个对象实施了<code>std::move</code>后就告诉编译器该对象可能具备移动的条件。为什么是可能呢？通常情况下的确没有问题，具备移动的条件。看下面这个例子：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Entity</span>&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">Entity</span><span class="params">(std::string tmp)</span></span>;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>explicit</code> 是一个关键字，通常用于类的构造函数声明中，用于阻止隐式类型转换。当一个构造函数被标记为 <code>explicit</code> 时，它告诉编译器不要执行隐式类型转换，只有显式调用时才会使用该构造函数。</p>
+<p><code>Entity</code>类的构造函数不需要修改<code>tmp</code>，根据优良传统“只要有可能使用<code>const</code>就使用”，将代码更改成了下面的形式：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Entity</span>&#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    std::string value;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">Entity</span><span class="params">(<span class="type">const</span> std::string tmp)</span></span></span><br><span class="line"><span class="function">    : value(std::move(tmp))&#123;</span>&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>代码顺利运行，但是<code>tmp</code>是被复制近<code>value</code>的，而不是移动。<code>std::move(tmp)</code>后结果是右值<code>const std::string</code>，常量性保留下来了。<br>可以浅浅的看一下string的头文件:</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line">   <span class="comment">//string 文件</span></span><br><span class="line">   <span class="keyword">using</span> string    = basic_string&lt;<span class="type">char</span>&gt;;</span><br><span class="line"></span><br><span class="line">   <span class="comment">//basic_string.h 文件</span></span><br><span class="line"></span><br><span class="line">   <span class="comment">//复制构造函数</span></span><br><span class="line">   <span class="built_in">basic_string</span>(<span class="type">const</span> basic_string&amp; __str)</span><br><span class="line">     : _M_dataplus(_M_local_data(),</span><br><span class="line">	    _Alloc_traits::_S_select_on_copy(__str._M_get_allocator()))</span><br><span class="line">     &#123;</span><br><span class="line">_M_construct(__str._M_data(), __str._M_data() + __str.<span class="built_in">length</span>(),</span><br><span class="line">	     std::forward_iterator_tag());</span><br><span class="line">     &#125;</span><br><span class="line">   </span><br><span class="line">   <span class="comment">//移动构造函数</span></span><br><span class="line">   <span class="built_in">basic_string</span>(basic_string&amp;&amp; __str) <span class="keyword">noexcept</span></span><br><span class="line">     : _M_dataplus(_M_local_data(), std::<span class="built_in">move</span>(__str._M_get_allocator()))</span><br><span class="line">     &#123;</span><br><span class="line"><span class="keyword">if</span> (__str._M_is_local())</span><br><span class="line">  &#123;</span><br><span class="line">    traits_type::<span class="built_in">copy</span>(_M_local_buf, __str._M_local_buf,</span><br><span class="line">		      __str.<span class="built_in">length</span>() + <span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    _M_data(__str._M_data());</span><br><span class="line">    _M_capacity(__str._M_allocated_capacity);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Must use _M_length() here not _M_set_length() because</span></span><br><span class="line"><span class="comment">// basic_stringbuf relies on writing into unallocated capacity so</span></span><br><span class="line"><span class="comment">// we mess up the contents if we put a &#x27;\0&#x27; in the string.</span></span><br><span class="line">_M_length(__str.<span class="built_in">length</span>());</span><br><span class="line">__str._M_data(__str._M_local_data());</span><br><span class="line">__str._M_set_length(<span class="number">0</span>);</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到移动构造的函数只能接受非常量的<code>string</code>类型的右值引用作为形参。因为指涉到常量的左值引用允许绑定在一个常量右值性别的形参，最终调用的是<code>string</code>的复制构造函数（即使tmp为右值）。</p>
+<p>通过这个例子，我们可以学习到：</p>
+<ul>
+<li>如果想取得对某个对象执行移动操作的能力，不要将其声明为常量。</li>
+<li><code>std::move</code>不能保证强制型别转换的对象具备可移动的能力。</li>
+<li>唯一可以确定的，结果是个右值。</li>
+</ul>
+<h3 id="std-forward"><a href="#std-forward" class="headerlink" title="std::forward"></a>std::forward</h3><p>需要注意的是：传递给 std::forward 的实参型别应当是个非引用型别,因为习惯上它编码的所传递<br>实参应该是个右值(参见条款 28)。<br><code>std::forward</code> 仅仅在特定情况下会实施强制类型转换。最常见的就是某个函数模板取用了万能引用型别作为形参，传递给另一个函数,如下：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">func</span><span class="params">(<span class="type">const</span> Entity&amp; left)</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func</span><span class="params">(Entity&amp;&amp; right)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func2</span><span class="params">(T&amp;&amp; param)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="built_in">func</span>(param);</span><br><span class="line">    <span class="built_in">func</span>(std::forward&lt;T&gt;(param));</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function">std::string <span class="title">str</span><span class="params">(<span class="string">&quot;hello&quot;</span>)</span></span>;</span><br><span class="line">    <span class="function">Entity <span class="title">e</span><span class="params">(str)</span></span>;</span><br><span class="line">    <span class="built_in">func2</span>(e);</span><br><span class="line">    <span class="built_in">func2</span>(std::<span class="built_in">move</span>(e));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们希望<code>func2</code>传入的是一个左值时，执行<code>func</code>的左值的版本，传入的是个右值的时候执行<code>func</code>重载的右值的版本。但是函数形参都是左值，也就是说这里的<code>param</code>一直是左值，不论传入<code>func2</code>的是左值还是右值，都只会执行<code>func</code>的左值版本。此时，<code>std::forward</code>就做到了这件事：仅当实参是右值完成初始化的时候才会执行向右值的强制类型转换。</p>
+<p>那么<code>std::forward</code>是如何知道实参是否通过右值来完成初始化的呢？其实是通过传入的函数模板形参<code>T</code>来实现的(详细参见条款 28)。</p>
 ]]></content>
       <tags>
         <tag>c++</tag>
