@@ -53,7 +53,7 @@ SYSCALL_DEFINE4(accept4, int, fd, struct sockaddr __user *, upeer_sockaddr,
 	newfd = sock_alloc_file(newsock, &newfile, flags);
 	if (unlikely(newfd < 0)) {
 		err = newfd;
-		sock_release(newsock);敬请斧正
+		sock_release(newsock);
     
 	err = security_socket_accept(sock, newsock);
 	if (err)
@@ -323,13 +323,13 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 	struct epoll_event epds;
     //#define	EFAULT		14	/* Bad address */
 	error = -EFAULT;
-    // 检查参数，并从用户空间复制事件的数据到内核空间
+    // 1. 根据操作判断是否拷贝到内核以及获取 file 对象
 	if (ep_op_has_event(op) &&
 	    copy_from_user(&epds, event, sizeof(struct epoll_event)))
 		goto error_return;
     //#define	EBADF		 9	/* Bad file number */
 	error = -EBADF;
-	// 通过文件描述符获取 eventpoll 内核对象
+	// 通过文件描述符获取 file对象
 	file = fget(epfd);
 	if (!file)
 		goto error_return;
@@ -349,7 +349,7 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 
 	ep = file->private_data;
 
-
+	// 2. 循环引用的处理
 	if (unlikely(is_file_epoll(tfile) && op == EPOLL_CTL_ADD)) {
 		mutex_lock(&epmutex);
 		did_lock_epmutex = 1;
@@ -360,15 +360,16 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 
 
 	mutex_lock(&ep->mtx);
-
+	// 3. ep_find
 	epi = ep_find(ep, tfile, fd);
 
 	error = -EINVAL;
-	switch (op) {
+	// 4. 
+	switch (op) {(!is_file_epoll(f.file));
 	case EPOLL_CTL_ADD:
 		if (!epi) {
 			epds.events |= POLLERR | POLLHUP;
-			error = ep_insert(ep, &epds, tfile, fd);
+			error = nsert(ep, &epds, tfile, fd);
 		} else
 			error = -EEXIST;
 		break;
@@ -399,4 +400,194 @@ error_return:
 
 	return error;
 }
+```
+### 1. 根据操作判断是否拷贝到内核以及获取 file 对象
+
+这里的`op`是对`epoll`操作动作（添加、删除、修改），`ep_op_has_event(op)`是判断是否是删除操作，如果`op != EPOLL_CTL_DEL 为 true`时，则需要调用`copy_from_user()`将`event`事件拷贝到内核的`epds`变量中。因为只有删除操作不需要内核使用进程传入的`event`事件。
+
+```c
+static inline int ep_op_has_event(int op)
+{
+	return op != EPOLL_CTL_DEL;
+}
+```
+
+接下来调用两次`fget`分别获取epoll文件和连接套接字文件的file结构变量。
+
+接下来就是对参数的一些检查，出现如下情况，就可以认为传入的参数有问题，直接返回出错：
+
+1. 目标文件不支持poll操作(!tf.file->f_op->poll)；
+2. 监听的目标文件就是epoll文件本身(f.file == tf.file)；
+3. 用户传入的epoll文件(epfd代表的文件）并不是一个真正的epoll的文件(!is_file_epoll(f.file));
+
+### 2. 循环引用的处理
+
+这里会有一个问题，假设有两个epoll文件描述符 A 和 B，且A已经插入到B的文件描述符中，而某个时刻B直接或者间接插入到A中，这就形成闭环，导致事件发生时递归处理，从来形成文件的事件循环，这就是循环引用。它会导致死锁或者其他的问题。这里为了解决循环引用，代码中是下面的措施：
+```c
+	if (unlikely(is_file_epoll(tfile) && op == EPOLL_CTL_ADD)) {
+		mutex_lock(&epmutex);	
+		did_lock_epmutex = 1;
+		error = -ELOOP;
+		if (ep_loop_check(ep, tfile) != 0)
+			goto error_tgt_fput;
+	}
+```
+这里先判断插入的文件描述符是否是epoll文件描述符，是否是`EPOLL_CTL_ADD`操作，条件满足时会先`mutex_lock(&epmutex);`获取全局锁防止处理时发生竞争，接下来判断是否存在闭环`ep_loop_check(ep, tfile) != 0`，如果存在进入对应错误处理。
+
+### 3. ep_find
+ <!-- Try to lookup the file inside our RB tree, Since we grabbed "mtx" above, we can be sure to be able to use the item looked up by ep_find() till we release the mutex. -->
+
+在ep里面，维护着一个红黑树`rbr`，每次添加注册事件时，都会申请一个epitem结构的变量表示事件的监听项，然后插入ep的红黑树里面。在epoll_ctl里面，会调用ep_find函数从ep的红黑树里面查找目标文件表示的监听项，返回的监听项可能为空。而`epoll_filefd`[结构体](https://elixir.bootlin.com/linux/v2.6.39.4/source/fs/eventpoll.c#L93)中只有两个成员:file结构体和其对应的fd。
+
+```c
+static struct epitem *ep_find(struct eventpoll *ep, struct file *file, int fd)
+{
+	int kcmp;
+	struct rb_node *rbp;
+	struct epitem *epi, *epir = NULL;
+	struct epoll_filefd ffd;
+	//epi 用于遍历红黑树节点，epir 用于存储最终找到的 epitem 结构体
+	ep_set_ffd(&ffd, file, fd);
+	// 遍历红黑树查找其对应的 epitem
+	for (rbp = ep->rbr.rb_node; rbp; ) {
+		epi = rb_entry(rbp, struct epitem, rbn);
+		kcmp = ep_cmp_ffd(&ffd, &epi->ffd);
+		if (kcmp > 0)
+			rbp = rbp->rb_right;
+		else if (kcmp < 0)
+			rbp = rbp->rb_left;
+		else {
+			epir = epi;
+			break;
+		}
+	}
+
+	return epir;
+}
+```
+### 4. EPOLL_CTL_ADD情况
+
+接下来switch这块区域的代码就是整个epoll_ctl函数的核心，对op进行switch出来的有添加(EPOLL_CTL_ADD)、删除(EPOLL_CTL_DEL)和修改(EPOLL_CTL_MOD)三种情况，这里我以添加为例讲解，其他两种情况类似，知道了如何添加监听事件，其他删除和修改监听事件都可以举一反三。
+```c
+	case EPOLL_CTL_ADD:
+		if (!epi) {
+			// epds 是 epollevent
+			epds.events |= POLLERR | POLLHUP;
+			error = ep_insert(ep, &epds, tfile, fd);
+		} else
+			error = -EEXIST;
+		break;
+```
+
+为目标文件添加监控事件时，首先要保证当前ep里面还没有对该目标文件进行监听，如果存在(epi不为空)，就返回-EEXIST错误。否则说明参数正常，然后先默认设置对目标文件的POLLERR和POLLHUP监听事件，然后调用ep_insert函数，将对目标文件的监听事件插入到ep维护的红黑树里面,下面是ep_insert的源码：
+```c
+// fs.eventpoll.c
+static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
+		     struct file *tfile, int fd)
+{
+	int error, revents, pwake = 0;
+	unsigned long flags;
+	long user_watches;
+	struct epitem *epi;
+	struct ep_pqueue epq;
+	
+	// 检查 epoll 实例中的监视数是否超过上限
+	user_watches = atomic_long_read(&ep->user->epoll_watches);
+	if (unlikely(user_watches >= max_user_watches))
+		return -ENOSPC;
+	
+	// 分配 epitem 项结构体
+	if (!(epi = kmem_cache_alloc(epi_cache, GFP_KERNEL)))
+		return -ENOMEM;
+
+	// epi 初始化
+	INIT_LIST_HEAD(&epi->rdllink);
+	INIT_LIST_HEAD(&epi->fllink);
+	INIT_LIST_HEAD(&epi->pwqlist);
+	epi->ep = ep;
+	ep_set_ffd(&epi->ffd, tfile, fd);
+	epi->event = *event;
+	epi->nwait = 0;
+	epi->next = EP_UNACTIVE_PTR;
+
+	epq.epi = epi;
+	// 初始化回调函数
+	init_poll_funcptr(&epq.pt, ep_ptable_queue_proc);
+
+	//  将回调函数 ep_ptable_queue_proc 与 tfile 文件关联起来，以及获取当前文件的事件位
+	revents = tfile->f_op->poll(tfile, &epq.pt);
+
+	error = -ENOMEM;
+	if (epi->nwait < 0)
+		goto error_unregister;
+
+	// 调用list_add_tail_rcu将当前监听项添加到目标文件的f_ep_links链表里面
+	// 该链表是目标文件的epoll钩子链表，所有对该目标文件进行监听的监听项都会加入到该链表里面。
+	spin_lock(&tfile->f_lock);
+	list_add_tail(&epi->fllink, &tfile->f_ep_links);
+	spin_unlock(&tfile->f_lock);
+
+
+	// 将epi监听项添加到ep维护的红黑树里面
+	ep_rbtree_insert(ep, epi);
+
+	spin_lock_irqsave(&ep->lock, flags);
+
+	if ((revents & event->events) && !ep_is_linked(&epi->rdllink)) {
+		list_add_tail(&epi->rdllink, &ep->rdllist);
+
+		if (waitqueue_active(&ep->wq))
+			wake_up_locked(&ep->wq);
+		if (waitqueue_active(&ep->poll_wait))
+			pwake++;
+	}
+
+	spin_unlock_irqrestore(&ep->lock, flags);
+
+	atomic_long_inc(&ep->user->epoll_watches);
+
+	if (pwake)
+		ep_poll_safewake(&ep->poll_wait);
+
+	return 0;
+
+error_unregister:
+	ep_unregister_pollwait(ep, epi);
+
+	spin_lock_irqsave(&ep->lock, flags);
+	if (ep_is_linked(&epi->rdllink))
+		list_del_init(&epi->rdllink);
+	spin_unlock_irqrestore(&ep->lock, flags);
+
+	kmem_cache_free(epi_cache, epi);
+
+	return error;
+}
+```
+
+在调用epoll_ctl时，可能会产生相关进程需要监听的事件，如果有监听的事件产生，(revents & event->events 为 true)，并且目标文件相关的监听项没有链接到ep的准备链表rdlist里面的话，就将该监听项添加到ep的rdlist准备链表里面，rdlist链接的是该epoll描述符监听的所有已经就绪的目标文件的监听项。并且，如果有任务在等待产生事件时，就调用wake_up_locked函数唤醒所有正在等待的任务，处理相应的事件。当进程调用epoll_wait时，该进程就出现在ep的wq等待队列里面。
+
+
+--------------------------------
+[回调函数](https://elixir.bootlin.com/linux/v2.6.39.4/source/include/linux/rcupdate.h#L60)
+```c
+#include <linux/rcupdate.h>
+
+struct my_data {
+    // 数据结构的定义
+    int value;
+    struct rcu_head rcu;  // 包含在数据结构中的 struct rcu_head
+};
+
+// 初始化数据结构并将其插入 RCU 队列
+void enqueue_for_removal(struct my_data *data) {
+    call_rcu(&data->rcu, my_data_free_callback);
+}
+
+// 实际的释放回调函数
+void my_data_free_callback(struct rcu_head *head) {
+    struct my_data *data = container_of(head, struct my_data, rcu);
+    kfree(data);
+}
+
 ```
