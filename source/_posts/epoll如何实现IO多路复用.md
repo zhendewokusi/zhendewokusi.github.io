@@ -205,12 +205,21 @@ SYSCALL_DEFINE1(epoll_create1, int, flags)
 	struct eventpoll *ep = NULL;
 	// flags处理
     // ...
+
+	// 1. ep_alloc
 	error = ep_alloc(&ep);
 	// 错误处理
     // ...
+
+	// 2. 创建匿名的文件对象以及文件描述符
+	error = anon_inode_getfd("[eventpoll]", &eventpoll_fops, ep,
+				 O_RDWR | (flags & O_CLOEXEC));
 	return error;
 }
 ```
+
+### 1. ep_alloc
+
 `eventpoll`的[实现](https://elixir.bootlin.com/linux/v2.6.39.4/source/fs/eventpoll.c#L158)，这里我们只看主要的成员：
 ```c
 // fs/eventpool.c
@@ -224,8 +233,8 @@ struct eventpoll {
 };
 ```
 成员作用：
-- **wq**：软中断数据就绪的时候会通过wq来找到阻塞在epoll对象上的用户进程。
-- **rbr**：管理用户进程下添加进来的所有socket连接。
+- **wq**：软中断数据就绪的时候会通过wq来找到阻塞在epoll对象上的用户**进程**。等待队列链表用于管理等待事件发生的进程。
+- **rbr**：红黑树用于存储被监控的文件描述符（fd）的数据结构及其状态信息。
 - **rdllist**：当有连接就绪时，会将就绪的连接放在该链表中。这样就不用遍历整棵树。
 然后在`ep_alloc`里面实现初始化工作，[源码](https://elixir.bootlin.com/linux/v2.6.39.4/source/fs/eventpoll.c#L748)：
 ```c
@@ -237,6 +246,7 @@ static int ep_alloc(struct eventpoll **pep)
 
 	user = get_current_user();
 	error = -ENOMEM;
+	// ep的初始化操作
 	ep = kzalloc(sizeof(*ep), GFP_KERNEL);
 	if (unlikely(!ep))
 		goto free_uid;
@@ -260,9 +270,47 @@ free_uid:
 }
 ```
 
-## epoll_ctl 的实现
-(https://elixir.bootlin.com/linux/v2.6.39.4/source/fs/eventpoll.c#L1347)
+### 2. 创建匿名的文件对象以及文件描述符
 
+匿名文件对象是内核用于表示一些临时或者有特殊用途的文件对象，其是在内存中动态创建和管理的，常见用于进程间通信（比如`pipe`、`fifo`）、临时文件、内核模块之间的通信以及一些特殊的操作。通过将文件挂接在单个 inode 上来创建新文件。这对于不需要拥有完整 inode 即可正确运行的文件非常有用。使用 anon_inode_getfd() 创建的所有文件将共享一个 inode，从而节省内存并避免文件/inode/dentry 设置的代码重复。将`epoll`和文件描述符关联起来，内核也更方便管理和处理被监视的文件描述符的事件。
+
+```c
+int anon_inode_getfd(const char *name, const struct file_operations *fops,
+		     void *priv, int flags)
+{
+	int error, fd;
+	struct file *file;
+	// 获取一个未被使用的文件描述符
+	error = get_unused_fd_flags(flags);
+	if (error < 0)
+		return error;
+	fd = error;
+	// 创建一个匿名文件对象
+	file = anon_inode_getfile(name, fops, priv, flags);
+	// 创建文件对象发生错误的处理
+	if (IS_ERR(file)) {
+		error = PTR_ERR(file);
+		goto err_put_unused_fd;
+	}
+	// 将该匿名文件对象和文件描述符关联起来
+	fd_install(fd, file);
+
+	return fd;
+
+err_put_unused_fd:
+	put_unused_fd(fd);
+	return error;
+}
+EXPORT_SYMBOL_GPL(anon_inode_getfd);
+```
+
+总结epoll_create函数所做的事：调用epoll_create后，在内核中分配一个eventpoll结构和代表epoll文件的file结构，并且将这两个结构关联在一块，同时，返回一个也与file结构相关联的epoll文件描述符fd。当应用程序操作epoll时，需要传入一个epoll文件描述符fd，内核根据这个fd，找到epoll的file结构，然后通过file，获取之前epoll_create申请eventpoll结构变量，epoll相关的重要信息都存储在这个结构里面。接下来，所有epoll接口函数的操作，都是在eventpoll结构变量上进行的。
+
+所以，epoll_create的作用就是为进程在内核中建立一个从epoll文件描述符到eventpoll结构变量的通道。
+
+## epoll_ctl 的实现
+这里是理解epoll的核心区域（这么久了，终于到了....）。
+首先epoll_ctl的作用是添加、修改、删除文件的监听事件，[内核代码](https://elixir.bootlin.com/linux/v2.6.39.4/source/fs/eventpoll.c#L1347)：
 ```c
 SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 		struct epoll_event __user *, event)
@@ -281,6 +329,7 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 		goto error_return;
     //#define	EBADF		 9	/* Bad file number */
 	error = -EBADF;
+	// 通过文件描述符获取 eventpoll 内核对象
 	file = fget(epfd);
 	if (!file)
 		goto error_return;
@@ -328,7 +377,7 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 			error = ep_remove(ep, epi);
 		else
 			error = -ENOENT;
-		break;
+		break;flags
 	case EPOLL_CTL_MOD:
 		if (epi) {
 			epds.events |= POLLERR | POLLHUP;
