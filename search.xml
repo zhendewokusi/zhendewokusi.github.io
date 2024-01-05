@@ -166,6 +166,54 @@
       </tags>
   </entry>
   <entry>
+    <title>TCP 超时计时器的管理</title>
+    <url>/2024/01/05/TCP-%E8%B6%85%E6%97%B6%E8%AE%A1%E6%97%B6%E5%99%A8%E7%9A%84%E7%AE%A1%E7%90%86/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本文只是一个简要的笔记，如果想要深入了解，请查阅<a href="https://www.rfc-editor.org/info/rfc2988">RFC 2988</a>。适合对<code>TCP</code>有一定了解和基础的人查看。</p>
+<h2 id="每连接单一计时器"><a href="#每连接单一计时器" class="headerlink" title="每连接单一计时器"></a>每连接单一计时器</h2><p>我们都能想到，如果给每一个<code>TCP</code>分段都分配一个计时器，这是最直接的方法。但是这带来了巨大的内存开销和调度开销。难不成一个<code>TCP</code>通信的服务器负担全用来给分段计时间，这太离谱了，有没有更好的办法，先人已经为我们想到了一个适用至今的方法：采取每个TCP连接单一计时器的设计。</p>
+<p>首先我们要明确，这个超时计时器需要实现什么功能：</p>
+<ol>
+<li>有报文<strong>长时间</strong>没有接收到，必须提示超时。</li>
+<li>这个<strong>长时间</strong>不能太长也不能太短。</li>
+</ol>
+<p>如果这里的超时时间太短了，会导致正常传输的数据包被当成无效数据，网络中充斥大量无效重传，浪费网络资源；如果超时时间太长，就会导致数据传输效率的太低，网络延迟提高。</p>
+<p>因此RFC2988制定了下面的原则：</p>
+<ol>
+<li>每次发送包含数据的数据包（包括重传）时，如果定时器没有运行，则启动定时器。如果定时器在运行，就什么也不做。</li>
+<li>当所有未完成的数据都被确认后，关闭定时器。</li>
+<li>当接收到新数据的ACK时候，重新启动定时器。<br>当定时器超时时，执行下面的操作：</li>
+<li>指数退避，发送方设置 RTO 为之前的二倍，并且关闭定时器。</li>
+<li>重传 TCP 接收方尚未确认的最早的报文段。</li>
+<li>启动重传定时器。</li>
+</ol>
+<p>为什么要有原则 3 ？</p>
+<p>假设下面的情况，如果在定时器快到期的时候发送一部分数据。这样在超时前，只能收到定时器刚开始运行时发送的报文段，后续的正常数据包会被当作超时，因此后续的数据都需要重传，这太考验网络的负载和使用者的耐心了。有了原则3，好处自然不用我多说，保证一部分正常数据的不必要重传。</p>
+<p>还有就是如果一个ack到来了，说明后续的ack大概率也会到达，即使出现了丢失，也会在两倍的 RTO 内被重传。为什么是两倍呢？举个简单的例子，A和B是两个同时发送的报文段的ACK（假设，一般会将其合并成一个ACK进行发送），发送方在无限接近超时时候收到了A,此时会将定时器重新启动，如果B数据包在网络中丢失，那么发送方再等待一个 RTO 就会知道 B 丢失。这样算下来不就是两倍的 RTO 内会被重传嘛。</p>
+<h2 id="RTO的计算"><a href="#RTO的计算" class="headerlink" title="RTO的计算"></a>RTO的计算</h2><p>为了计算RTO,TCP的发送方需要维护两个变量：SRTT(平滑往返时间，英文：Smoothed Round-Trip Time)和RTTAR（往返时间变化，英文：Returns the Round Trip Time Variance）。</p>
+<p>SRTT、RTTAVR和RTO的计算规则如下：</p>
+<ol>
+<li>测量RTT之前，需要将RTO设置为3秒，此时指数退避依旧有效。<br> 该计时器实际上会产生2.5秒到3秒的数值。因为使用粒度为G的心跳计时器的实现不应该将计时器设置低于<code>2.5 + G</code>秒。</li>
+<li>当进行第一个 RTT 测量时候，主机必须如下设置:<ul>
+<li>SRTT &lt;- R</li>
+<li>RTTVAR &lt;- R&#x2F;2</li>
+<li>RTO &lt;- SRTT + max(G,K * RTTVAR) 这里的K为4</li>
+</ul>
+</li>
+<li>当进行了一个后续的往返时间测量 R’ 时，主机必须设置：<ul>
+<li>RTTVAR &lt;- (1 - beta) * RTTVAR + beta * | SRTT - R’|</li>
+<li>SRTT &lt;- (1 - alpha) * SRTT + alpha * R’<br>这里的alpha为1&#x2F;8，beta &#x3D; 1&#x2F;4。（2988里面说是 JK88 建议的，应该是个1988年的论文吧，没找到）。<br>这里需要注意的是，计算RTTVAR时用到的SRTT，必须是分配前的数值，也就是说，这两个计算的顺序不能改变。<br>计算 RTO 时候，如果其小于 1 秒，上取整。RTO可以设置最大值，但是最大值应该大于60秒。</li>
+</ul>
+</li>
+</ol>
+<h2 id="获取-RTT-的样本"><a href="#获取-RTT-的样本" class="headerlink" title="获取 RTT 的样本"></a>获取 RTT 的样本</h2><p>TCP<strong>必须</strong>使用<a href="https://www.geeksforgeeks.org/karns-algorithm-for-optimizing-tcp/">Karn-Partridge 算法</a>来获取准确的消息往返时间估计。由于重传的模糊性，举个简单的例子，如果一个报文段发送了一次重传，发送方接受到ACK，但是此时的ACK到底是重传报文段的确认还是第一次发送的报文段的确认，这就是重传的模糊性，发送方不知道到底是哪个报文段的确认，这样得到的RTT会有很大的偏差，当然这个问题可以由TCP的时间戳选项来解决。该算法会忽略重传的数据段。仅使用明确的确认（即仅传送一次的段的确认）来估计往返时间。Karn 算法的第一部分规定，当存在重传模糊性时，RTT 值将被忽略，而不是集成到 SRTT 中。</p>
+<p>但是也有问题，这么简单粗暴的方法，举个例子，如果TCP延迟显著增加后发送数据，TCP计算超时，并且根据之前的RTT来重新传输数据，极端情况下，TCP忽略所有的重传数据包的RTT,RTO永远不会更新。</p>
+<p>其第二部分就是考虑到了这种不太理想的网络情况。为每次重传的RTO设置“退避因子”，也就是常说的指数退避。在不需要重传的成功数据传输发生之前，不会重置退避因子。该部分会放置网络的拥塞，使其能从任何拥塞问题中恢复，还保证了RTT信息不会丢失，当数据成功传输而无需重传时，可以将伴随的RTT测量添加到SRTT中。</p>
+<p>需要注意的是：TCP 实现可以在多次回退计时器后清除 SRTT 和 RTTVAR，因为在这种情况下当前 SRTT 和 RTTVAR 很可能是假的。一旦 SRTT 和 RTTVAR 被清除，它们应该采集的下一个 RTT 样本进行初始化（RTO的第二步）。</p>
+]]></content>
+      <tags>
+        <tag>TCP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>epoll如何实现IO多路复用</title>
     <url>/2023/12/20/epoll%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/</url>
     <content><![CDATA[<p>大一暑假完成了一个C++在线聊天室，对epoll的应用仅仅在于那三个函数：</p>
@@ -289,6 +337,119 @@
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="type">int</span>&gt; palin;</span><br><span class="line"><span class="keyword">auto</span> init = [] &#123;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> base = <span class="number">1</span>;base &lt;= <span class="number">10000</span>;base*=<span class="number">10</span>) &#123;</span><br><span class="line">        <span class="comment">// 奇数</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="type">int</span> i = base;i &lt; base * <span class="number">10</span>;i++) &#123;</span><br><span class="line">            <span class="type">int</span> num = i;</span><br><span class="line">            <span class="keyword">for</span>(<span class="type">int</span> m = i / <span class="number">10</span>;m;m /= <span class="number">10</span>) &#123;</span><br><span class="line">                num = num * <span class="number">10</span> + m % <span class="number">10</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            palin.push_back(num);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 偶数</span></span><br><span class="line">       <span class="keyword">if</span>(base &lt;= <span class="number">1000</span>)&#123;</span><br><span class="line">            <span class="keyword">for</span>(<span class="type">int</span> i = base;i &lt; base * <span class="number">10</span>;i++) &#123;</span><br><span class="line">                <span class="type">int</span> num = i;</span><br><span class="line">                <span class="keyword">for</span>(<span class="type">int</span> m = i;m;m /= <span class="number">10</span>) &#123;</span><br><span class="line">                    num = num * <span class="number">10</span> + m % <span class="number">10</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                palin.push_back(num);</span><br><span class="line">            &#125;</span><br><span class="line">       &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    palin.push_back(<span class="number">1&#x27;000&#x27;000&#x27;001</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;();</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line">public:</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> <span class="title function_">minimumCost</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="type">int</span>&gt;&amp; nums)</span> &#123;</span><br><span class="line">        sort(nums.begin(),nums.end());</span><br><span class="line">        <span class="type">int</span> n = nums.size();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">auto</span> distance = [&amp;](<span class="type">int</span> i) -&gt; <span class="type">long</span> <span class="type">long</span> &#123;</span><br><span class="line">            <span class="type">long</span> <span class="type">long</span> sum = <span class="number">0</span>;</span><br><span class="line">            <span class="type">int</span> target = palin[i];</span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">auto</span>&amp; e : nums) &#123;</span><br><span class="line">                sum += <span class="built_in">abs</span>(e - target);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> sum;</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> i = lower_bound(palin.begin(),palin.end(),nums[(n<span class="number">-1</span>)/<span class="number">2</span>]) - palin.begin();</span><br><span class="line">        <span class="keyword">if</span>(palin[i] &lt;= nums[n / <span class="number">2</span>])  <span class="keyword">return</span> distance(i);</span><br><span class="line">        <span class="keyword">return</span> min(distance(i),distance(i - <span class="number">1</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>]]></content>
       <tags>
         <tag>算法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>中断和动态时钟显示</title>
+    <url>/2023/10/18/%E4%B8%AD%E6%96%AD%E5%92%8C%E5%8A%A8%E6%80%81%E6%97%B6%E9%92%9F%E6%98%BE%E7%A4%BA/</url>
+    <content><![CDATA[<h3 id="外部硬件中断"><a href="#外部硬件中断" class="headerlink" title="外部硬件中断"></a>外部硬件中断</h3><p>外部硬件中断就是从处理器外面来的中断信号，优先级很高。</p>
+<p>它的实现是通过两个信号线引入处理器内部的，分别叫<code>NMI</code>和<code>INTR</code>。</p>
+<span id="more"></span>
+
+
+<h4 id="非屏蔽中断（Non-Maskable-Interrupt-NMI）"><a href="#非屏蔽中断（Non-Maskable-Interrupt-NMI）" class="headerlink" title="非屏蔽中断（Non Maskable Interrupt,NMI）"></a>非屏蔽中断（Non Maskable Interrupt,NMI）</h4><p>需要两条线的原因是不一定每一个中断的优先级都需要立刻处理。当涉及到非屏蔽中断，通常是一些紧急且必须立即处理的硬件事件。</p>
+<p><strong>硬件中断的优先级管理</strong>：某些系统可能会使用外部硬件中断来处理中断请求的优先级。这意味着当多个中断同时发生时，不是所有中断都需要立即处理。处理器可以为不同的中断信号分配不同的优先级，从而决定哪些中断需要立即处理，而哪些可以等待。</p>
+<p>需要立即处理的：</p>
+<ul>
+<li>电池电量低，系统会发出一个中断告诉处理器快没电了。</li>
+<li>内存访问电路有校验错误（读取错误）。</li>
+</ul>
+<p>不那么着急处理的：</p>
+<p>举个例子，一个嵌入式系统可能有多个外部硬件设备连接到处理器，包括键盘、鼠标和网络适配器。如果用户同时按下键盘上的按键和鼠标点击，系统可以根据设定的中断优先级来决定哪个中断首先得到处理。通常情况下，键盘中断可能具有较高的优先级，因为用户通常期望键盘响应更快，而鼠标中断则有较低的优先级，因为它不太紧急。</p>
+<p>中断信号的来教叫做 <strong>中断源</strong>。传统的兼容模式下，NMI的中断源通过一个<strong>与非门</strong>连接到处理器，处理器的NMI引脚是<strong>高电平有效</strong>，中断信号是<strong>低电平</strong>有效,也就是NMI引脚是低电平则没有中断。</p>
+<p>即使NMI与非门的输出为高时，也不能立刻被识别，还需要<strong>至少</strong>维持4个以上的时钟周期才算有效。</p>
+<p>处理器还应当知道发生了什么事，以便于采用适当的处理措施。每个类型的中断都被统一编号，被称为中断类型号、中断向量或者中断号。而有些比较严重的事件就在实模式下被赋予了统一的中断号 2 ，一旦发生 2 号中断，处理器和软件系统通常会放弃继续正常工作的念头，也不会试图纠正已经发生的问题和错误。</p>
+<h4 id="可屏蔽中断-Interrupt-Request-INTR-1-7-4-9-2-5"><a href="#可屏蔽中断-Interrupt-Request-INTR-1-7-4-9-2-5" class="headerlink" title="可屏蔽中断(Interrupt Request,INTR)1,7,4,9,2,5"></a>可屏蔽中断(Interrupt Request,INTR)1,7,4,9,2,5</h4><p>由于可能有多台设备同时发送中断请求，但是处理器每次只能处理一个中断，这就需要一个中间层进行仲裁，优先处理优先级更高的。个人计算机中使用最多的就是<code>8259芯片</code>。Intel处理器允许256个中断，8259负责15个不固定的中断号，8个中断输入引脚。引脚的<code>IR0</code>优先级向<code>IR7</code>递减，从片是级联在主片的<code>IR2</code>引脚。</p>
+<p>个人计算机中有两块<code>8259芯片</code>，并且两块的关系是级联：主片的<code>INT输出</code>直接送到处理器<code>INTR</code>引脚；从片的<code>INT输出</code>送到第一块的引脚2上，一共提供15个中断信号。</p>
+<ul>
+<li>主片的引脚 0 接的是系统定时器&#x2F;定时器芯片，主片的端口号是<code>0x20</code>和<code>0x21</code></li>
+<li>从片的引脚 0 接的是实时时钟芯片(RTC)，从片的端口号是<code>0xa0</code>和<code>0xa1</code></li>
+</ul>
+<p>8259内部有中断屏蔽寄存器（IMR）8位寄SPSCQueue *SPSCQueueInit(int capacity);<br>void SPSCQueuePush(SPSCQueue *queue, void *s);<br>void *SPSCQueuePop(SPSCQueue *queue);<br>void SPSCQueueDestory(SPSCQueue *);<br>即使中断从8529发送出去，最终解释权也归处理器。处理器内部的标志寄存器有个<code>IF</code>标志位（中断标志）。当<code>IF</code>为0,中断信号被忽略。</p>
+<p>对于IF标志位的处理有两条指令:<code>cli</code>（Clear Interrupt Flag）和<code>sti</code>(SeT Interrupt flag)。</p>
+<p><strong>中断嵌套</strong>：当一个中断事件正在处理时，如果来了优先级更高的中断事件，允许暂时中止当前的中断事件，先为优先级较高的中断事件服务。</p>
+<h4 id="实模式下的中断向量表"><a href="#实模式下的中断向量表" class="headerlink" title="实模式下的中断向量表"></a>实模式下的中断向量表</h4><p>中断处理实际上就是处理器执行一段与该中断有关的指令。因为可以识别256个中断，理论上就需要256段程序，在实模式下，处理器要求将它们的入口点集中存放在内存中从地址<code>0x00000</code>到<code>0x003ff</code>，共<code>1kb</code>的空间内，这就是中断向量表（Interrupt Vector Table,IVT）。</p>
+<p>每个中断在中断向量表中占2个字，分别是中断处理程序的偏移地址和段地址。</p>
+<p>中断发生时，处理器执行完当前指令后会立刻为硬件服务，会先响应中断，告诉处理器处理该中断，然后向8259芯片所要中断号。</p>
+<p>处理器拿到中断号会干下面的事情：</p>
+<ol>
+<li>保护断点的现场。将标志寄存器FLAGS压栈，清除其<code>IF</code>位和<code>TF</code>位（陷阱标志）。然后将当前的<code>CS</code>和<code>IP</code>压栈。(清除<code>IF</code>是因为在此期间不再响应硬件中断，如果希望更高优先级的中断嵌套，可以编写程序时，使用<code>sti</code>开放中断)</li>
+<li>执行中断程序。拿到中断号，将其乘4,得到其在中断向量表的偏移地址。从表中取出来对应段地址和偏移地址传入<code>CS</code>和<code>IP</code>。</li>
+<li>返回到断点继续执行。所有中断处理程序的最后一条必须是中断返回指令<code>iret</code>。依次恢复<code>IP</code>，<code>CS</code>，<code>FLAGS</code>的原始数值。</li>
+</ol>
+<p>而<code>NMI</code>不会从外部获得中断号，自动生成中断号码 2,其他过程相同。</p>
+<h4 id="实时时钟、CMOS-RAM-和-BCD编码"><a href="#实时时钟、CMOS-RAM-和-BCD编码" class="headerlink" title="实时时钟、CMOS RAM 和 BCD编码"></a>实时时钟、CMOS RAM 和 BCD编码</h4><p>计算机为什么能精准显示日期和时间？在外围设备控制器芯片<code>ICH</code>内部，集成了实时时钟电路（RTC）和两小块由互补金属氧化物材料组成的静态存储器（CMOS RAM）。实时时钟电路负责计时，日期和时间存储在静态存储器中。存储方式通常是二进制编码的十进制数（BCD）。  </p>
+<p>实时时钟是全天候跳动的，即使断电。因为主板上有个小电池供电。</p>
+<p>日期和时间信息存储在<code>CMOS RAM</code>中，通常有128字节，日期和时间信息只占了一小部分容量，其他空间用于保存整机的配置信息（硬件类型、工作参数、开机密码、辅助设备启动顺序）</p>
+<p><code>CMOS RAM</code>的访问需要通过两个端口：<code>0x70</code>或者<code>0x74</code>是索引端口，用来指定<code>CMOS RAM</code>内的单元；<code>0x71</code>或者<code>0x75</code>是数据端口，用来读写对应单元内的内容。</p>
+<table>
+<thead>
+<tr>
+<th>偏移地址</th>
+<th>内容</th>
+<th>偏移地址</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0x00</td>
+<td>秒</td>
+<td>0x01</td>
+<td>闹钟秒</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>分</td>
+<td>0x03</td>
+<td>闹钟分</td>
+</tr>
+<tr>
+<td>0x04</td>
+<td>时</td>
+<td>0x05</td>
+<td>闹钟时</td>
+</tr>
+<tr>
+<td>0x06</td>
+<td>星期</td>
+<td>0x07</td>
+<td>日</td>
+</tr>
+<tr>
+<td>0x08</td>
+<td>月</td>
+<td>0x09</td>
+<td>年</td>
+</tr>
+<tr>
+<td>0x0A</td>
+<td>寄存器A</td>
+<td>0x0B</td>
+<td>寄存器B</td>
+</tr>
+<tr>
+<td>0x0C</td>
+<td>寄存器C</td>
+<td>0x0D</td>
+<td>寄存器D</td>
+</tr>
+</tbody></table>
+<p>下面的例子是用来获取当时是星期几:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mov al,0x06</span><br><span class="line">out 0x70,al</span><br><span class="line">in al,0x71</span><br></pre></td></tr></table></figure>
+<ol>
+<li><p><code>out 0x70, al</code>: 这是一个输出指令，用于将AL寄存器中的值（在这里是0x06）写入到I&#x2F;O端口0x70。在x86架构中，0x70端口通常用于控制实时时钟芯片的寄存器。这个操作可能用于设置实时时钟的某些配置，例如将其配置为读取或写入日期和时间信息。</p>
+</li>
+<li><p><code>in al, 0x71</code>: 这是一个输入指令，用于从I&#x2F;O端口0x71读取数据，并将读取的数据存储到AL寄存器中。在这个上下文中，0x71端口通常用于读取实时时钟的状态或数据，例如当前的时间信息。</p>
+</li>
+</ol>
+<p>端口的最高位是控制<code>NMI</code>中断的开关。为0时，允许<code>NMI</code>中断到达处理器；为1时，阻断所有<code>NMI</code>信号，它<strong>不是</strong>中断信号，但是能控制与非门的输出。其他七个比特实际上用于指定<code>CMOS RAM</code>单元的索引号。</p>
+<h4 id="初始化8259、RTC和中断向量表"><a href="#初始化8259、RTC和中断向量表" class="headerlink" title="初始化8259、RTC和中断向量表"></a>初始化8259、RTC和中断向量表</h4><p>寄存器A：寄存器A通常用于配置RTC的中断频率。通过设置寄存器A的值，你可以定义RTC中断的触发频率，例如每秒触发一次。这通常涉及到配置寄存器A的低4位（Rate Selector）。</p>
+<p>寄存器B：寄存器B通常包含一些控制中断的位。它允许你启用或禁用RTC中断，并可能还有其他控制位，例如24小时模式、BCD码格式等。</p>
+<p>寄存器C：寄存器C用于指示中断的发生。当RTC触发中断时，寄存器C的某些位会被设置，以告知系统发生了中断。</p>
+<p>寄存器D：寄存器D通常包含一些额外的控制位，可能与其他RTC功能有关。</p>
+]]></content>
+      <tags>
+        <tag>x86汇编</tag>
       </tags>
   </entry>
   <entry>
@@ -533,116 +694,36 @@
       </tags>
   </entry>
   <entry>
-    <title>中断和动态时钟显示</title>
-    <url>/2023/10/18/%E4%B8%AD%E6%96%AD%E5%92%8C%E5%8A%A8%E6%80%81%E6%97%B6%E9%92%9F%E6%98%BE%E7%A4%BA/</url>
-    <content><![CDATA[<h3 id="外部硬件中断"><a href="#外部硬件中断" class="headerlink" title="外部硬件中断"></a>外部硬件中断</h3><p>外部硬件中断就是从处理器外面来的中断信号，优先级很高。</p>
-<p>它的实现是通过两个信号线引入处理器内部的，分别叫<code>NMI</code>和<code>INTR</code>。</p>
-<span id="more"></span>
-
-
-<h4 id="非屏蔽中断（Non-Maskable-Interrupt-NMI）"><a href="#非屏蔽中断（Non-Maskable-Interrupt-NMI）" class="headerlink" title="非屏蔽中断（Non Maskable Interrupt,NMI）"></a>非屏蔽中断（Non Maskable Interrupt,NMI）</h4><p>需要两条线的原因是不一定每一个中断的优先级都需要立刻处理。当涉及到非屏蔽中断，通常是一些紧急且必须立即处理的硬件事件。</p>
-<p><strong>硬件中断的优先级管理</strong>：某些系统可能会使用外部硬件中断来处理中断请求的优先级。这意味着当多个中断同时发生时，不是所有中断都需要立即处理。处理器可以为不同的中断信号分配不同的优先级，从而决定哪些中断需要立即处理，而哪些可以等待。</p>
-<p>需要立即处理的：</p>
-<ul>
-<li>电池电量低，系统会发出一个中断告诉处理器快没电了。</li>
-<li>内存访问电路有校验错误（读取错误）。</li>
-</ul>
-<p>不那么着急处理的：</p>
-<p>举个例子，一个嵌入式系统可能有多个外部硬件设备连接到处理器，包括键盘、鼠标和网络适配器。如果用户同时按下键盘上的按键和鼠标点击，系统可以根据设定的中断优先级来决定哪个中断首先得到处理。通常情况下，键盘中断可能具有较高的优先级，因为用户通常期望键盘响应更快，而鼠标中断则有较低的优先级，因为它不太紧急。</p>
-<p>中断信号的来教叫做 <strong>中断源</strong>。传统的兼容模式下，NMI的中断源通过一个<strong>与非门</strong>连接到处理器，处理器的NMI引脚是<strong>高电平有效</strong>，中断信号是<strong>低电平</strong>有效,也就是NMI引脚是低电平则没有中断。</p>
-<p>即使NMI与非门的输出为高时，也不能立刻被识别，还需要<strong>至少</strong>维持4个以上的时钟周期才算有效。</p>
-<p>处理器还应当知道发生了什么事，以便于采用适当的处理措施。每个类型的中断都被统一编号，被称为中断类型号、中断向量或者中断号。而有些比较严重的事件就在实模式下被赋予了统一的中断号 2 ，一旦发生 2 号中断，处理器和软件系统通常会放弃继续正常工作的念头，也不会试图纠正已经发生的问题和错误。</p>
-<h4 id="可屏蔽中断-Interrupt-Request-INTR-1-7-4-9-2-5"><a href="#可屏蔽中断-Interrupt-Request-INTR-1-7-4-9-2-5" class="headerlink" title="可屏蔽中断(Interrupt Request,INTR)1,7,4,9,2,5"></a>可屏蔽中断(Interrupt Request,INTR)1,7,4,9,2,5</h4><p>由于可能有多台设备同时发送中断请求，但是处理器每次只能处理一个中断，这就需要一个中间层进行仲裁，优先处理优先级更高的。个人计算机中使用最多的就是<code>8259芯片</code>。Intel处理器允许256个中断，8259负责15个不固定的中断号，8个中断输入引脚。引脚的<code>IR0</code>优先级向<code>IR7</code>递减，从片是级联在主片的<code>IR2</code>引脚。</p>
-<p>个人计算机中有两块<code>8259芯片</code>，并且两块的关系是级联：主片的<code>INT输出</code>直接送到处理器<code>INTR</code>引脚；从片的<code>INT输出</code>送到第一块的引脚2上，一共提供15个中断信号。</p>
-<ul>
-<li>主片的引脚 0 接的是系统定时器&#x2F;定时器芯片，主片的端口号是<code>0x20</code>和<code>0x21</code></li>
-<li>从片的引脚 0 接的是实时时钟芯片(RTC)，从片的端口号是<code>0xa0</code>和<code>0xa1</code></li>
-</ul>
-<p>8259内部有中断屏蔽寄存器（IMR）8位寄SPSCQueue *SPSCQueueInit(int capacity);<br>void SPSCQueuePush(SPSCQueue *queue, void *s);<br>void *SPSCQueuePop(SPSCQueue *queue);<br>void SPSCQueueDestory(SPSCQueue *);<br>即使中断从8529发送出去，最终解释权也归处理器。处理器内部的标志寄存器有个<code>IF</code>标志位（中断标志）。当<code>IF</code>为0,中断信号被忽略。</p>
-<p>对于IF标志位的处理有两条指令:<code>cli</code>（Clear Interrupt Flag）和<code>sti</code>(SeT Interrupt flag)。</p>
-<p><strong>中断嵌套</strong>：当一个中断事件正在处理时，如果来了优先级更高的中断事件，允许暂时中止当前的中断事件，先为优先级较高的中断事件服务。</p>
-<h4 id="实模式下的中断向量表"><a href="#实模式下的中断向量表" class="headerlink" title="实模式下的中断向量表"></a>实模式下的中断向量表</h4><p>中断处理实际上就是处理器执行一段与该中断有关的指令。因为可以识别256个中断，理论上就需要256段程序，在实模式下，处理器要求将它们的入口点集中存放在内存中从地址<code>0x00000</code>到<code>0x003ff</code>，共<code>1kb</code>的空间内，这就是中断向量表（Interrupt Vector Table,IVT）。</p>
-<p>每个中断在中断向量表中占2个字，分别是中断处理程序的偏移地址和段地址。</p>
-<p>中断发生时，处理器执行完当前指令后会立刻为硬件服务，会先响应中断，告诉处理器处理该中断，然后向8259芯片所要中断号。</p>
-<p>处理器拿到中断号会干下面的事情：</p>
+    <title>指针和数组</title>
+    <url>/2023/10/10/%E6%8C%87%E9%92%88%E5%92%8C%E6%95%B0%E7%BB%84/</url>
+    <content><![CDATA[<h3 id="指针和数组"><a href="#指针和数组" class="headerlink" title="指针和数组"></a>指针和数组</h3><p>C 语言中指针和数组这两个概念密不可分，以至于如果没有理解其中一个概念，就无法彻底理解另一个概念。</p>
+<h4 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h4><p>很基础的一些知识点我就不重复了。关于数组，需要注意的有两个点：</p>
 <ol>
-<li>保护断点的现场。将标志寄存器FLAGS压栈，清除其<code>IF</code>位和<code>TF</code>位（陷阱标志）。然后将当前的<code>CS</code>和<code>IP</code>压栈。(清除<code>IF</code>是因为在此期间不再响应硬件中断，如果希望更高优先级的中断嵌套，可以编写程序时，使用<code>sti</code>开放中断)</li>
-<li>执行中断程序。拿到中断号，将其乘4,得到其在中断向量表的偏移地址。从表中取出来对应段地址和偏移地址传入<code>CS</code>和<code>IP</code>。</li>
-<li>返回到断点继续执行。所有中断处理程序的最后一条必须是中断返回指令<code>iret</code>。依次恢复<code>IP</code>，<code>CS</code>，<code>FLAGS</code>的原始数值。</li>
+<li>C 语言中只有一维数组，而且编译期间就要知道数组的精确大小。数组的元素可以是任何类型的对象，当然也包含了数组，这也就是多维数组。</li>
+<li>对于一个数组，我们其实只能干两件事情：确定数组的大小、获取指向该数组下标为 0 的元素的指针。看到这话你是不是要反驳我了：不对呀，你写博客写糊涂了吧？我还可以<code>arr[1]</code>的操作呀。其实<code>[]</code>操作的本质是通过指针来实现的。比如<code>arr[i] = 1</code>其实上是<code>*(arr + i) = 1</code>，这里的 <code>arr</code>就是指向该数组下标为 0 的元素的指针。<span id="more"></span></li>
 </ol>
-<p>而<code>NMI</code>不会从外部获得中断号，自动生成中断号码 2,其他过程相同。</p>
-<h4 id="实时时钟、CMOS-RAM-和-BCD编码"><a href="#实时时钟、CMOS-RAM-和-BCD编码" class="headerlink" title="实时时钟、CMOS RAM 和 BCD编码"></a>实时时钟、CMOS RAM 和 BCD编码</h4><p>计算机为什么能精准显示日期和时间？在外围设备控制器芯片<code>ICH</code>内部，集成了实时时钟电路（RTC）和两小块由互补金属氧化物材料组成的静态存储器（CMOS RAM）。实时时钟电路负责计时，日期和时间存储在静态存储器中。存储方式通常是二进制编码的十进制数（BCD）。  </p>
-<p>实时时钟是全天候跳动的，即使断电。因为主板上有个小电池供电。</p>
-<p>日期和时间信息存储在<code>CMOS RAM</code>中，通常有128字节，日期和时间信息只占了一小部分容量，其他空间用于保存整机的配置信息（硬件类型、工作参数、开机密码、辅助设备启动顺序）</p>
-<p><code>CMOS RAM</code>的访问需要通过两个端口：<code>0x70</code>或者<code>0x74</code>是索引端口，用来指定<code>CMOS RAM</code>内的单元；<code>0x71</code>或者<code>0x75</code>是数据端口，用来读写对应单元内的内容。</p>
-<table>
-<thead>
-<tr>
-<th>偏移地址</th>
-<th>内容</th>
-<th>偏移地址</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>0x00</td>
-<td>秒</td>
-<td>0x01</td>
-<td>闹钟秒</td>
-</tr>
-<tr>
-<td>0x02</td>
-<td>分</td>
-<td>0x03</td>
-<td>闹钟分</td>
-</tr>
-<tr>
-<td>0x04</td>
-<td>时</td>
-<td>0x05</td>
-<td>闹钟时</td>
-</tr>
-<tr>
-<td>0x06</td>
-<td>星期</td>
-<td>0x07</td>
-<td>日</td>
-</tr>
-<tr>
-<td>0x08</td>
-<td>月</td>
-<td>0x09</td>
-<td>年</td>
-</tr>
-<tr>
-<td>0x0A</td>
-<td>寄存器A</td>
-<td>0x0B</td>
-<td>寄存器B</td>
-</tr>
-<tr>
-<td>0x0C</td>
-<td>寄存器C</td>
-<td>0x0D</td>
-<td>寄存器D</td>
-</tr>
-</tbody></table>
-<p>下面的例子是用来获取当时是星期几:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mov al,0x06</span><br><span class="line">out 0x70,al</span><br><span class="line">in al,0x71</span><br></pre></td></tr></table></figure>
-<ol>
-<li><p><code>out 0x70, al</code>: 这是一个输出指令，用于将AL寄存器中的值（在这里是0x06）写入到I&#x2F;O端口0x70。在x86架构中，0x70端口通常用于控制实时时钟芯片的寄存器。这个操作可能用于设置实时时钟的某些配置，例如将其配置为读取或写入日期和时间信息。</p>
+<p>既然<code>arr[0] = 1</code>本质上是<code>*(arr + 0) = 1</code>，那么我们可以整个活:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="number">0</span>[arr] = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>读者可以自行尝试一下，这样的代码是否可行。</p>
+<h4 id="二维数组"><a href="#二维数组" class="headerlink" title="二维数组"></a>二维数组</h4><h5 id="二维数组内存相关"><a href="#二维数组内存相关" class="headerlink" title="二维数组内存相关"></a>二维数组内存相关</h5><ul>
+<li><p>第一种情况：是直接声明的二维数组</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> rows = <span class="number">3</span>; <span class="comment">// 行数</span></span><br><span class="line">    <span class="type">int</span> cols = <span class="number">4</span>; <span class="comment">// 列数</span></span><br><span class="line">    <span class="type">int</span> arr[rows][cols];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始化二维数组</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">            arr[i][j] = i * cols + j;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 验证地址连续性</span></span><br><span class="line">    <span class="type">int</span> *ptr = &amp;arr[<span class="number">0</span>][<span class="number">0</span>];</span><br><span class="line">    <span class="type">int</span> isContiguous = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">            <span class="comment">// 计算下一个元素的地址</span></span><br><span class="line">            <span class="type">int</span> *nextPtr = &amp;arr[i][j];</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>,&amp;arr[i][j]);</span><br><span class="line">            <span class="keyword">if</span> (nextPtr != ptr) &#123;</span><br><span class="line">                isContiguous = <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            ptr++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (isContiguous) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;二维数组的地址是连续的。\n&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;二维数组的地址不是连续的。\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">0x7fff2f05bb80</span><br><span class="line">0x7fff2f05bb84</span><br><span class="line">0x7fff2f05bb88</span><br><span class="line">0x7fff2f05bb8c</span><br><span class="line">0x7fff2f05bb90</span><br><span class="line">0x7fff2f05bb94</span><br><span class="line">0x7fff2f05bb98</span><br><span class="line">0x7fff2f05bb9c</span><br><span class="line">0x7fff2f05bba0</span><br><span class="line">0x7fff2f05bba4</span><br><span class="line">0x7fff2f05bba8</span><br><span class="line">0x7fff2f05bbac</span><br><span class="line">二维数组的地址是连续的。</span><br></pre></td></tr></table></figure>
 </li>
-<li><p><code>in al, 0x71</code>: 这是一个输入指令，用于从I&#x2F;O端口0x71读取数据，并将读取的数据存储到AL寄存器中。在这个上下文中，0x71端口通常用于读取实时时钟的状态或数据，例如当前的时间信息。</p>
+<li><p>第二种情况：使用malloc来分配一个二维数组</p>
 </li>
-</ol>
-<p>端口的最高位是控制<code>NMI</code>中断的开关。为0时，允许<code>NMI</code>中断到达处理器；为1时，阻断所有<code>NMI</code>信号，它<strong>不是</strong>中断信号，但是能控制与非门的输出。其他七个比特实际上用于指定<code>CMOS RAM</code>单元的索引号。</p>
-<h4 id="初始化8259、RTC和中断向量表"><a href="#初始化8259、RTC和中断向量表" class="headerlink" title="初始化8259、RTC和中断向量表"></a>初始化8259、RTC和中断向量表</h4><p>寄存器A：寄存器A通常用于配置RTC的中断频率。通过设置寄存器A的值，你可以定义RTC中断的触发频率，例如每秒触发一次。这通常涉及到配置寄存器A的低4位（Rate Selector）。</p>
-<p>寄存器B：寄存器B通常包含一些控制中断的位。它允许你启用或禁用RTC中断，并可能还有其他控制位，例如24小时模式、BCD码格式等。</p>
-<p>寄存器C：寄存器C用于指示中断的发生。当RTC触发中断时，寄存器C的某些位会被设置，以告知系统发生了中断。</p>
-<p>寄存器D：寄存器D通常包含一些额外的控制位，可能与其他RTC功能有关。</p>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> rows = <span class="number">3</span>; <span class="comment">// 行数</span></span><br><span class="line">    <span class="type">int</span> cols = <span class="number">4</span>; <span class="comment">// 列数</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用malloc分配内存</span></span><br><span class="line">    <span class="type">int</span> **arr = (<span class="type">int</span> **)<span class="built_in">malloc</span>(rows * <span class="keyword">sizeof</span>(<span class="type">int</span> *));</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        arr[i] = (<span class="type">int</span> *)<span class="built_in">malloc</span>(cols * <span class="keyword">sizeof</span>(<span class="type">int</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始化二维数组</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">            arr[i][j] = i * cols + j;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, (<span class="type">void</span> *)&amp;arr[i][j]);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 验证地址连续性</span></span><br><span class="line">    <span class="type">int</span> *ptr = &amp;arr[<span class="number">0</span>][<span class="number">0</span>];</span><br><span class="line">    <span class="type">int</span> isContiguous = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">            <span class="comment">// 计算下一个元素的地址</span></span><br><span class="line">            <span class="type">int</span> *nextPtr = &amp;arr[i][j];</span><br><span class="line">            <span class="keyword">if</span> (nextPtr != ptr) &#123;</span><br><span class="line">                isContiguous = <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            ptr++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (isContiguous) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;通过malloc分配的二维数组的地址是连续的。\n&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;通过malloc分配的二维数组的地址不是连续的。\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 释放分配的内存</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="built_in">free</span>(arr[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">free</span>(arr);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>运行结果如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">0x55b2818142c0</span><br><span class="line">0x55b2818142c4</span><br><span class="line">0x55b2818142c8</span><br><span class="line">0x55b2818142cc</span><br><span class="line">0x55b2818142e0</span><br><span class="line">0x55b2818142e4</span><br><span class="line">0x55b2818142e8</span><br><span class="line">0x55b2818142ec</span><br><span class="line">0x55b281814300</span><br><span class="line">0x55b281814304</span><br><span class="line">0x55b281814308</span><br><span class="line">0x55b28181430c</span><br><span class="line">通过malloc分配的二维数组的地址不是连续的。</span><br></pre></td></tr></table></figure>
+<p>通过 <code>malloc</code> 分配的二维数组的地址在内存中通常是不连续的。<code>malloc</code> 函数分配的内存块是堆内存，这些内存块通常在堆中的不同位置。因此，二维数组的各行和各列在内存中可能是分散的，<strong>不一定</strong>是连续的。</p>
+<p>当你使用 <code>malloc</code> 分配一个二维数组时，你实际上在堆中创建了一个指向指针的数组，其中每个指针指向一个独立的内存块（一维数组），这些内存块存储了实际的数据。因此，二维数组的不同行在堆中的不同位置，它们不是物理上连续的内存块。</p>
+<p>如果你需要连续的内存块以便于优化访问或传递给函数，你可以使用一维数组来模拟二维数组，并在计算索引时手动进行转换，以使其在一维数组中是连续的。这将涉及到一些数学运算，但可以帮助你实现连续内存存储。</p>
+<p>如果你需要大规模的多维数组，并且连续内存非常重要，你可能需要考虑使用静态数组或者专门设计的数据结构，而不是 <code>malloc</code> 动态分配的内存。</p>
 ]]></content>
       <tags>
-        <tag>x86汇编</tag>
+        <tag>C语言</tag>
       </tags>
   </entry>
   <entry>
@@ -717,39 +798,6 @@
 ]]></content>
       <tags>
         <tag>c++</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>指针和数组</title>
-    <url>/2023/10/10/%E6%8C%87%E9%92%88%E5%92%8C%E6%95%B0%E7%BB%84/</url>
-    <content><![CDATA[<h3 id="指针和数组"><a href="#指针和数组" class="headerlink" title="指针和数组"></a>指针和数组</h3><p>C 语言中指针和数组这两个概念密不可分，以至于如果没有理解其中一个概念，就无法彻底理解另一个概念。</p>
-<h4 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h4><p>很基础的一些知识点我就不重复了。关于数组，需要注意的有两个点：</p>
-<ol>
-<li>C 语言中只有一维数组，而且编译期间就要知道数组的精确大小。数组的元素可以是任何类型的对象，当然也包含了数组，这也就是多维数组。</li>
-<li>对于一个数组，我们其实只能干两件事情：确定数组的大小、获取指向该数组下标为 0 的元素的指针。看到这话你是不是要反驳我了：不对呀，你写博客写糊涂了吧？我还可以<code>arr[1]</code>的操作呀。其实<code>[]</code>操作的本质是通过指针来实现的。比如<code>arr[i] = 1</code>其实上是<code>*(arr + i) = 1</code>，这里的 <code>arr</code>就是指向该数组下标为 0 的元素的指针。<span id="more"></span></li>
-</ol>
-<p>既然<code>arr[0] = 1</code>本质上是<code>*(arr + 0) = 1</code>，那么我们可以整个活:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="number">0</span>[arr] = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
-<p>读者可以自行尝试一下，这样的代码是否可行。</p>
-<h4 id="二维数组"><a href="#二维数组" class="headerlink" title="二维数组"></a>二维数组</h4><h5 id="二维数组内存相关"><a href="#二维数组内存相关" class="headerlink" title="二维数组内存相关"></a>二维数组内存相关</h5><ul>
-<li><p>第一种情况：是直接声明的二维数组</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> rows = <span class="number">3</span>; <span class="comment">// 行数</span></span><br><span class="line">    <span class="type">int</span> cols = <span class="number">4</span>; <span class="comment">// 列数</span></span><br><span class="line">    <span class="type">int</span> arr[rows][cols];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始化二维数组</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">            arr[i][j] = i * cols + j;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 验证地址连续性</span></span><br><span class="line">    <span class="type">int</span> *ptr = &amp;arr[<span class="number">0</span>][<span class="number">0</span>];</span><br><span class="line">    <span class="type">int</span> isContiguous = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">            <span class="comment">// 计算下一个元素的地址</span></span><br><span class="line">            <span class="type">int</span> *nextPtr = &amp;arr[i][j];</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>,&amp;arr[i][j]);</span><br><span class="line">            <span class="keyword">if</span> (nextPtr != ptr) &#123;</span><br><span class="line">                isContiguous = <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            ptr++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (isContiguous) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;二维数组的地址是连续的。\n&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;二维数组的地址不是连续的。\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>运行结果如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">0x7fff2f05bb80</span><br><span class="line">0x7fff2f05bb84</span><br><span class="line">0x7fff2f05bb88</span><br><span class="line">0x7fff2f05bb8c</span><br><span class="line">0x7fff2f05bb90</span><br><span class="line">0x7fff2f05bb94</span><br><span class="line">0x7fff2f05bb98</span><br><span class="line">0x7fff2f05bb9c</span><br><span class="line">0x7fff2f05bba0</span><br><span class="line">0x7fff2f05bba4</span><br><span class="line">0x7fff2f05bba8</span><br><span class="line">0x7fff2f05bbac</span><br><span class="line">二维数组的地址是连续的。</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>第二种情况：使用malloc来分配一个二维数组</p>
-</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> rows = <span class="number">3</span>; <span class="comment">// 行数</span></span><br><span class="line">    <span class="type">int</span> cols = <span class="number">4</span>; <span class="comment">// 列数</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用malloc分配内存</span></span><br><span class="line">    <span class="type">int</span> **arr = (<span class="type">int</span> **)<span class="built_in">malloc</span>(rows * <span class="keyword">sizeof</span>(<span class="type">int</span> *));</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        arr[i] = (<span class="type">int</span> *)<span class="built_in">malloc</span>(cols * <span class="keyword">sizeof</span>(<span class="type">int</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始化二维数组</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">            arr[i][j] = i * cols + j;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, (<span class="type">void</span> *)&amp;arr[i][j]);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 验证地址连续性</span></span><br><span class="line">    <span class="type">int</span> *ptr = &amp;arr[<span class="number">0</span>][<span class="number">0</span>];</span><br><span class="line">    <span class="type">int</span> isContiguous = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">            <span class="comment">// 计算下一个元素的地址</span></span><br><span class="line">            <span class="type">int</span> *nextPtr = &amp;arr[i][j];</span><br><span class="line">            <span class="keyword">if</span> (nextPtr != ptr) &#123;</span><br><span class="line">                isContiguous = <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            ptr++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (isContiguous) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;通过malloc分配的二维数组的地址是连续的。\n&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;通过malloc分配的二维数组的地址不是连续的。\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 释放分配的内存</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">        <span class="built_in">free</span>(arr[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">free</span>(arr);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>运行结果如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">0x55b2818142c0</span><br><span class="line">0x55b2818142c4</span><br><span class="line">0x55b2818142c8</span><br><span class="line">0x55b2818142cc</span><br><span class="line">0x55b2818142e0</span><br><span class="line">0x55b2818142e4</span><br><span class="line">0x55b2818142e8</span><br><span class="line">0x55b2818142ec</span><br><span class="line">0x55b281814300</span><br><span class="line">0x55b281814304</span><br><span class="line">0x55b281814308</span><br><span class="line">0x55b28181430c</span><br><span class="line">通过malloc分配的二维数组的地址不是连续的。</span><br></pre></td></tr></table></figure>
-<p>通过 <code>malloc</code> 分配的二维数组的地址在内存中通常是不连续的。<code>malloc</code> 函数分配的内存块是堆内存，这些内存块通常在堆中的不同位置。因此，二维数组的各行和各列在内存中可能是分散的，<strong>不一定</strong>是连续的。</p>
-<p>当你使用 <code>malloc</code> 分配一个二维数组时，你实际上在堆中创建了一个指向指针的数组，其中每个指针指向一个独立的内存块（一维数组），这些内存块存储了实际的数据。因此，二维数组的不同行在堆中的不同位置，它们不是物理上连续的内存块。</p>
-<p>如果你需要连续的内存块以便于优化访问或传递给函数，你可以使用一维数组来模拟二维数组，并在计算索引时手动进行转换，以使其在一维数组中是连续的。这将涉及到一些数学运算，但可以帮助你实现连续内存存储。</p>
-<p>如果你需要大规模的多维数组，并且连续内存非常重要，你可能需要考虑使用静态数组或者专门设计的数据结构，而不是 <code>malloc</code> 动态分配的内存。</p>
-]]></content>
-      <tags>
-        <tag>C语言</tag>
       </tags>
   </entry>
   <entry>
