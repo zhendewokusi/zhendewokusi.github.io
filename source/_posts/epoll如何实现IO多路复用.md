@@ -591,3 +591,6 @@ void my_data_free_callback(struct rcu_head *head) {
 }
 
 ```
+
+[sk_data_ready](https://elixir.bootlin.com/linux/v2.6.39.4/source/net/ipv4/tcp_input.c#L5401)
+[sock_def_readable](https://elixir.bootlin.com/linux/v2.6.39.4/source/net/core/sock.c#L1904)
